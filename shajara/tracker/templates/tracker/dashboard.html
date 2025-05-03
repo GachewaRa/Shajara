@@ -1,0 +1,220 @@
+<!-- tracker/templates/tracker/dashboard.html -->
+{% extends 'tracker/base.html' %}
+
+{% block title %}Dashboard | Productivity Tracker{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Dashboard</h1>
+
+<div class="row">
+    <!-- Today's Tasks Overview -->
+    <div class="col-md-6">
+        <div class="card dashboard-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Today's Tasks</h5>
+                <a href="{% url 'tracker:daily_plan' %}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-edit"></i> Plan
+                </a>
+            </div>
+            <div class="card-body">
+                {% if today_tasks %}
+                    <ul class="list-group">
+                        {% for task in today_tasks %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    {% if task.status == 'C' %}
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        <span class="text-decoration-line-through">{{ task.title }}</span>
+                                    {% else %}
+                                        <i class="far fa-circle me-2"></i>
+                                        <span>{{ task.title }}</span>
+                                    {% endif %}
+                                </div>
+                                <span class="badge bg-primary rounded-pill">
+                                    {{ task.get_quadrant_display }}
+                                </span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-muted">No tasks planned for today. 
+                        <a href="{% url 'tracker:daily_plan' %}">Plan your day now</a>
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Eisenhower Matrix Overview -->
+    <div class="col-md-6">
+        <div class="card dashboard-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Eisenhower Matrix</h5>
+                <a href="{% url 'tracker:eisenhower_matrix' %}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-th-large"></i> Full Matrix
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6 text-center mb-3">
+                        <div class="p-3 bg-danger text-white rounded">
+                            <h6>Important & Urgent</h6>
+                            <h3>{{ tasks_by_quadrant.IU }}</h3>
+                        </div>
+                    </div>
+                    <div class="col-6 text-center mb-3">
+                        <div class="p-3 bg-warning text-dark rounded">
+                            <h6>Important & Not Urgent</h6>
+                            <h3>{{ tasks_by_quadrant.IN }}</h3>
+                        </div>
+                    </div>
+                    <div class="col-6 text-center">
+                        <div class="p-3 bg-info text-white rounded">
+                            <h6>Not Important & Urgent</h6>
+                            <h3>{{ tasks_by_quadrant.NI }}</h3>
+                        </div>
+                    </div>
+                    <div class="col-6 text-center">
+                        <div class="p-3 bg-secondary text-white rounded">
+                            <h6>Not Important & Not Urgent</h6>
+                            <h3>{{ tasks_by_quadrant.NN }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <!-- Recent Activities -->
+    <div class="col-md-6">
+        <div class="card dashboard-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Recent Activities</h5>
+                <a href="{% url 'tracker:activity_log' %}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-clock"></i> All Activities
+                </a>
+            </div>
+            <div class="card-body">
+                {% if recent_activities %}
+                    <div class="mb-3">
+                        <p class="mb-0">Time spent today: 
+                            <strong>{{ today_time|floatformat:0 }} minutes</strong>
+                            ({{ today_time|floatformat:0|divisibleby:60 }} hours {% if today_time %}{{ today_time|mod:60 }} minutes{% endif %})
+                        </p>
+                    </div>
+                    <ul class="list-group">
+                        {% for activity in recent_activities %}
+                            <li class="list-group-item activity-item activity-category-{{ activity.category }}">
+                                <div class="d-flex justify-content-between">
+                                    <span><strong>{{ activity.name }}</strong></span>
+                                    <span class="badge bg-secondary">{{ activity.duration_minutes }} mins</span>
+                                </div>
+                                <div class="text-muted small">
+                                    {{ activity.start_time|time:"H:i" }} - {{ activity.end_time|time:"H:i" }} | 
+                                    {{ activity.get_category_display }}
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-muted">No recent activities tracked.
+                        <a href="{% url 'tracker:add_activity' %}">Log an activity now</a>
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Productivity Score -->
+    <div class="col-md-6">
+        <div class="card dashboard-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Productivity Scores</h5>
+                <a href="{% url 'tracker:productivity_score' %}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-chart-line"></i> Score Today
+                </a>
+            </div>
+            <div class="card-body">
+                {% if productivity_scores %}
+                    <canvas id="productivityChart" height="200"></canvas>
+                {% else %}
+                    <p class="text-muted">No productivity scores recorded in the past week.
+                        <a href="{% url 'tracker:productivity_score' %}">Add your first score</a>
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <!-- Recent Learning -->
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Recent Learning</h5>
+                <a href="{% url 'tracker:learning_journal' %}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-book"></i> Learning Journal
+                </a>
+            </div>
+            <div class="card-body">
+                {% if recent_learning %}
+                    <div class="row">
+                        {% for entry in recent_learning %}
+                            <div class="col-md-4 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">{{ entry.date }}</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <p>{{ entry.content|truncatewords:30 }}</p>
+                                        {% if entry.tags %}
+                                            <div class="mt-2">
+                                                {% for tag in entry.tags.split %}
+                                                    <span class="badge bg-info me-1">{{ tag }}</span>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">No learning entries recorded yet.
+                        <a href="{% url 'tracker:add_learning_entry' %}">Add your first entry</a>
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    {% if productivity_scores %}
+    // Productivity Chart
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('productivityChart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [
+                    {% for score in productivity_scores %}
+                        '{{ score.date|date:"M d" }}',
+                    {% endfor %}
+                ],
+                datasets: [{
+                    label: 'Productivity Score',
+                    data: [
+                        {% for score in productivity_scores %}
+                            {{ score.score }},
+                        {% endfor %}
+                    ],
+                    backgroundColor: 'rgba(13, 110, 253, 0.2)',
+                    borderColor: 'rgba(13, 110, 253, 1)',
+                    borderWidth: 1,
+                    tension
