@@ -1,0 +1,138 @@
+{% extends 'tracker/base.html' %}
+{% block title %}Daily Plan for {{ selected_date|date:"l, F j, Y" }} | Productivity Tracker{% endblock %}
+{% block content %}
+<div class="container mt-5" style="background-color: #F8F9FA; padding: 30px; border-radius: 8px;">
+    <h1 class="mb-4" style="color: #F06905;">Daily Plan for {{ selected_date|date:"l, F j, Y" }}</h1>
+
+    <div class="mb-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <a href="{% url 'tracker:daily_plan_detail' prev_date|date:'Y-m-d' %}" class="btn btn-outline-secondary me-2"><i class="fas fa-chevron-left"></i> Previous Day</a>
+                <a href="{% url 'tracker:daily_plan_detail' today|date:'Y-m-d' %}" class="btn btn-outline-info">Today</a>
+                <a href="{% url 'tracker:daily_plan_detail' next_date|date:'Y-m-d' %}" class="btn btn-outline-secondary ms-2">Next Day <i class="fas fa-chevron-right"></i></a>
+            </div>
+            <div>
+                <a href="{% url 'tracker:daily_plan' %}" class="btn btn-outline-primary">Edit Today's Plan</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4" style="border: 1px solid #638D13; border-radius: 8px;">
+        <div class="card-body">
+            <h2 class="card-title" style="color: #0A3226;">Scheduled Tasks</h2>
+            {% if daily_plan.tasks.all %}
+                <ul class="list-group">
+                    {% for task in daily_plan.tasks.all %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center" style="border-color: #638D13;">
+                            <div>
+                                <a href="{% url 'tracker:edit_task' task.id %}">{{ task.title }}</a>
+                                {% if task.deadline %}
+                                    <small class="text-muted ms-2">Deadline: {{ task.deadline|date:"d/m/Y H:i" }}</small>
+                                {% endif %}
+                            </div>
+                            <span class="badge bg-info rounded-pill">{{ task.get_priority_display }}</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="card-text text-muted">No tasks scheduled for this day.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card mb-4" style="border: 1px solid #638D13; border-radius: 8px;">
+        <div class="card-body">
+            <h2 class="card-title" style="color: #0A3226;">Notes</h2>
+            {% if daily_plan.notes %}
+                <p class="card-text">{{ daily_plan.notes|linebreaksbr }}</p>
+            {% else %}
+                <p class="card-text text-muted">No notes for this day.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card" style="border: 1px solid #638D13; border-radius: 8px;">
+        <div class="card-body">
+            <h2 class="card-title" style="color: #0A3226;">Edit Daily Plan</h2>
+            <form method="post">
+                {% csrf_token %}
+                {{ daily_plan_form.as_p }}
+                <button type="submit" class="btn btn-primary" style="background-color: #FEB909; color: #212529; border: none;">Save Daily Plan</button>
+                <a href="{% url 'tracker:daily_plan_detail' selected_date|date:'Y-m-d' %}" class="btn btn-secondary ms-2">Cancel</a>
+            </form>
+        </div>
+    </div>
+
+    {% if activities %}
+    <div class="card mt-4" style="border: 1px solid #638D13; border-radius: 8px;">
+        <div class="card-body">
+            <h2 class="card-title" style="color: #0A3226;">Activities for {{ selected_date|date:"l, F j, Y" }}</h2>
+            {% if activities %}
+                <ul class="list-group">
+                    {% for activity in activities %}
+                        <li class="list-group-item" style="border-color: #638D13;">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1" style="color: #0A3226;">{{ activity.name }}</h5>
+                                <small class="text-muted">
+                                    {{ activity.start_time|time:"H:i" }} - {{ activity.end_time|time:"H:i" }}
+                                    ({{ activity.duration_minutes }} mins)
+                                </small>
+                            </div>
+                            {% if activity.description %}
+                                <p class="mb-1">{{ activity.description }}</p>
+                            {% endif %}
+                            <small class="text-muted">Category: {{ activity.category }}</small>
+                            {% if activity.task %}
+                                <br><small class="text-muted">Task: <a href="{% url 'tracker:edit_task' activity.task.id %}">{{ activity.task.title }}</a></small>
+                            {% endif %}
+                            <div class="mt-2">
+                                <a href="{% url 'tracker:edit_activity' activity.id %}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-edit"></i> Edit</a>
+                                <form method="post" action="{% url 'tracker:delete_activity' activity.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" style="color: #F06905; border-color: #F06905;" onclick="return confirm('Are you sure you want to delete this activity?')"><i class="fas fa-trash"></i> Delete</button>
+                                </form>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-muted">No activities recorded for this day.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if productivity %}
+    <div class="card mt-4" style="border: 1px solid #638D13; border-radius: 8px;">
+        <div class="card-body">
+            <h2 class="card-title" style="color: #0A3226;">Productivity Score</h2>
+            <p class="card-text">Score: {{ productivity.score }} / 100</p>
+            {% if productivity.reflection %}
+                <p class="card-text"><small class="text-muted">Reflection: {{ productivity.reflection }}</small></p>
+            {% endif %}
+            <a href="{% url 'tracker:productivity_score' %}?date={{ selected_date|date:'Y-m-d' }}" class="btn btn-sm btn-outline-secondary mt-2"><i class="fas fa-chart-bar"></i> View/Edit Score</a>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background-color: #034E64; /* Themed background */
+        color: #343a40; /* Default text color */
+    }
+    .card-title {
+        margin-bottom: 1rem;
+    }
+    .list-group-item a {
+        color: #0A3226;
+        text-decoration: none;
+    }
+    .list-group-item a:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}

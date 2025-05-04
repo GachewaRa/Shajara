@@ -1,0 +1,63 @@
+{% extends 'tracker/base.html' %}
+{% block title %}Productivity Score | Productivity Tracker{% endblock %}
+{% block content %}
+<div class="container mt-5" style="background-color: #F8F9FA; padding: 30px; border-radius: 8px;">
+    <h1 class="mb-4" style="color: #F06905;">Productivity Score</h1>
+
+    <div class="mb-3">
+        <form method="get" class="row g-3 align-items-center">
+            <div class="col-auto">
+                <label for="dateFilter" class="form-label" style="color: #0A3226; font-weight: bold;">View Score for Date:</label>
+            </div>
+            <div class="col-auto">
+                <input type="date" class="form-control" id="dateFilter" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-outline-secondary">View</button>
+            </div>
+            <div class="col-auto ms-auto">
+                <a href="{% url 'tracker:productivity_score' %}" class="btn btn-outline-info">Reset Date</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="card mb-4" style="border: 1px solid #638D13; border-radius: 8px;">
+        <div class="card-body">
+            <h2 class="card-title" style="color: #0A3226;">Productivity Score for {{ selected_date|date:"l, F j, Y" }}</h2>
+            {% if productivity %}
+                <p class="card-text"><strong>Score:</strong> {{ productivity.score }} / 100</p>
+                {% if productivity.reflection %}
+                    <p class="card-text"><strong>Reflection:</strong> {{ productivity.reflection|linebreaksbr }}</p>
+                {% endif %}
+                <a href="{% url 'tracker:productivity_score' %}?date={{ selected_date|date:'Y-m-d' }}#editScore" class="btn btn-sm btn-outline-secondary mt-2"><i class="fas fa-edit"></i> Edit Score</a>
+            {% else %}
+                <p class="card-text text-muted">No productivity score recorded for this date. Scroll down to add one.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card" style="border: 1px solid #638D13; border-radius: 8px;" id="editScore">
+        <div class="card-body">
+            <h2 class="card-title" style="color: #0A3226;">{% if productivity %}Edit{% else %}Add{% endif %} Productivity Score</h2>
+            <form method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="btn btn-primary" style="background-color: #FEB909; color: #212529; border: none;">Save Score</button>
+                <a href="{% url 'tracker:productivity_score' %}?date={{ selected_date|date:'Y-m-d' }}" class="btn btn-secondary ms-2">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background-color: #034E64; /* Themed background */
+        color: #343a40; /* Default text color */
+    }
+    .card-title {
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}

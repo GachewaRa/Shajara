@@ -1,0 +1,185 @@
+{% extends 'tracker/base.html' %}
+{% block title %}Task List | Productivity Tracker{% endblock %}
+{% block content %}
+<div class="container mt-5" style="background-color: #F8F9FA; padding: 30px; border-radius: 8px;">
+    <h1 class="mb-4" style="color: #F06905;">Task List</h1>
+
+    <div class="mb-4">
+        <a href="{% url 'tracker:add_task' %}" class="btn btn-primary" style="background-color: #FEB909; color: #212529; border: none;">Add New Task</a>
+    </div>
+
+    <h2 class="mb-3" style="color: #0A3226;">Active Tasks</h2>
+    {% if active_tasks %}
+        <ul class="list-group">
+            {% for task in active_tasks %}
+                <!-- <li class="list-group-item d-flex justify-content-between align-items-center" style="border-color: #638D13;">
+                    <div>
+                        <a href="{% url 'tracker:edit_task' task.id %}">{{ task.title }}</a>
+                        {% if task.deadline %}
+                            <small class="text-muted ms-2">Deadline: {{ task.deadline|date:"d/m/Y H:i" }}</small>
+                        {% endif %}
+                        <br>
+                        <small class="text-muted">Priority: {{ task.get_priority_display }}, Quadrant: {{ task.get_quadrant_display }}</small>
+                    </div>
+                    <div>
+                        <a href="{% url 'tracker:edit_task' task.id %}" class="btn btn-sm btn-outline-secondary me-2"><i class="fas fa-edit"></i></a>
+                        <form method="post" action="{% url 'tracker:delete_task' task.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{% url 'tracker:task_list' %}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" style="color: #F06905; border-color: #F06905;" onclick="return confirm('Are you sure you want to delete this task?')"><i class="fas fa-trash"></i></button>
+                        </form>
+                        <form method="post" action="{% url 'tracker:edit_task' task.id %}?next={{ request.path }}" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="C">
+                            <button type="submit" class="btn btn-sm btn-outline-success ms-2"><i class="fas fa-check"></i> Complete</button>
+                        </form>
+                    </div>
+                </li> -->
+                <li class="list-group-item d-flex justify-content-between align-items-center" style="border-color: #638D13;">
+                    <div>
+                        <a href="{% url 'tracker:edit_task' task.id %}">{{ task.title }}</a>
+                        {% if task.deadline %}
+                            <small class="text-muted ms-2">Deadline: {{ task.deadline|date:"d/m/Y H:i" }}</small>
+                        {% endif %}
+                        <br>
+                        <small class="text-muted">Priority: {{ task.get_priority_display }}, Quadrant: {{ task.get_quadrant_display }}</small>
+                    </div>
+                    <div>
+                        <a href="{% url 'tracker:edit_task' task.id %}" class="btn btn-sm btn-outline-secondary me-2"><i class="fas fa-edit"></i></a>
+                        <button class="btn btn-sm btn-outline-danger delete-task-btn" data-task-id="{{ task.id }}" style="color: #F06905; border-color: #F06905;"><i class="fas fa-trash"></i> Delete</button>
+                        <button class="btn btn-sm btn-outline-success ms-2 complete-task-btn" data-task-id="{{ task.id }}"><i class="fas fa-check"></i> Complete</button>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-muted">No active tasks.</p>
+    {% endif %}
+
+    <h2 class="mt-4 mb-3" style="color: #0A3226;">Completed Tasks</h2>
+    {% if completed_tasks %}
+        <ul class="list-group">
+            {% for task in completed_tasks %}
+                <li class="list-group-item d-flex justify-content-between align-items-center" style="border-color: #638D13; background-color: #f0f8ea;">
+                    <div>
+                        <span style="text-decoration: line-through;">{{ task.title }}</span>
+                        {% if task.deadline %}
+                            <small class="text-muted ms-2">Deadline: {{ task.deadline|date:"d/m/Y" }}</small>
+                        {% endif %}
+                        <br>
+                        <small class="text-muted">Completed on: {{ task.updated_at|date:"d/m/Y H:i" }}</small>
+                    </div>
+                    <div>
+                        <form method="post" action="{% url 'tracker:edit_task' task.id %}?next={{ request.path }}" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="IP">
+                            <button type="submit" class="btn btn-sm btn-outline-info"><i class="fas fa-undo"></i> Mark Incomplete</button>
+                        </form>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-muted">No completed tasks yet.</p>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background-color: #034E64; /* Themed background */
+        color: #343a40; /* Default text color */
+    }
+    .list-group-item a {
+        color: #0A3226;
+        text-decoration: none;
+    }
+    .list-group-item a:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+    const completeButtons = document.querySelectorAll('.complete-task-btn');
+    const deleteButtons = document.querySelectorAll('.delete-task-btn');
+    const taskList = document.querySelector('.list-group'); // Assuming your task list has this class
+
+    completeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const taskId = this.dataset.taskId;
+            fetch('/tasks/complete-ajax/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': getCookie('csrftoken') // You'll need a function to get the CSRF token
+                },
+                body: `task_id=${taskId}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Find the list item and update its appearance (e.g., add strikethrough)
+                    const listItem = this.closest('.list-group-item');
+                    const titleLink = listItem.querySelector('a');
+                    if (titleLink) {
+                        titleLink.style.textDecoration = 'line-through';
+                    }
+                    // Optionally disable the complete button
+                    this.disabled = true;
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            });
+        });
+    });
+
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            if (confirm('Are you sure you want to delete this task?')) {
+                const taskId = this.dataset.taskId;
+                fetch('/tasks/delete-ajax/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: `task_id=${taskId}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Remove the list item from the DOM
+                        const listItem = this.closest('.list-group-item');
+                        listItem.remove();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                });
+            }
+        });
+    });
+
+    // Function to get the CSRF token from cookies
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                let cookie = cookies[i].trim();
+                // Does this cookie string begin with the name we want?
+                if (cookie.startsWith(name + '=')) {
+                    cookieValue = cookie.substring(name.length + 1);
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+</script>
+{% endblock %}

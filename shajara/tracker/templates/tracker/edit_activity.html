@@ -1,0 +1,71 @@
+{% extends 'tracker/base.html' %}
+{% block title %}Edit Activity: {{ activity.name }} | Productivity Tracker{% endblock %}
+{% block content %}
+<div class="container mt-5" style="background-color: #F8F9FA; padding: 30px; border-radius: 8px;">
+    <h1 class="mb-4" style="color: #F06905;">Edit Activity: {{ activity.name }}</h1>
+    <div class="card" style="border: 1px solid #638D13; border-radius: 8px;">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="mb-3">
+                        <label for="{{ field.id_for_label }}" class="form-label" style="color: #0A3226; font-weight: bold;">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="alert alert-danger mt-2">{{ field.errors }}</div>
+                        {% endif %}
+                        {% if field.help_text %}
+                            <small class="form-text text-muted">{{ field.help_text }}</small>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                <button type="submit" class="btn btn-primary" style="background-color: #FEB909; color: #212529; border: none;">Save Changes</button>
+                <a href="{% url 'tracker:activity_log' %}" class="btn btn-secondary ms-2">Cancel</a>
+                <button type="button" class="btn btn-danger ms-2" data-bs-toggle="modal" data-bs-target="#deleteActivityModal" style="background-color: #F06905; border: none;">Delete Activity</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade" id="deleteActivityModal" tabindex="-1" aria-labelledby="deleteActivityModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header" style="background-color: #F06905; color: white;">
+                    <h5 class="modal-title" id="deleteActivityModalLabel">Confirm Delete</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to delete the activity "{{ activity.name }}"? This action cannot be undone.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form method="post" action="{% url 'tracker:delete_activity' activity.id %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger" style="background-color: #F06905; border: none;">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background-color: #034E64; /* Themed background */
+        color: #343a40; /* Default text color */
+    }
+    .form-control {
+        border: 1px solid #638D13;
+    }
+    .form-control:focus {
+        border-color: #FEB909;
+        box-shadow: 0 0 0 0.2rem rgba(254, 185, 9, 0.25);
+    }
+    .alert-danger {
+        background-color: #ffe0b2; /* Light orange for errors */
+        border-color: #ffb300;
+        color: #614a19;
+    }
+</style>
+{% endblock %}
