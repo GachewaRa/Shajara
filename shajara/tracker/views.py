@@ -560,30 +560,70 @@ def productivity_score(request):
     
     return render(request, 'tracker/productivity_score.html', context)
 
+# @login_required
+# def learning_journal(request):
+#     # Get entries, ordered by most recent first
+#     entries = LearningEntry.objects.filter(user=request.user).order_by('-date')
+    
+#     # Filter by tag if provided
+#     tag_filter = request.GET.get('tag')
+#     if tag_filter:
+#         entries = entries.filter(tags__icontains=tag_filter)
+    
+#     # Get all unique tags for the filter dropdown
+#     all_tags = set()
+#     for entry in LearningEntry.objects.filter(user=request.user):
+#         if entry.tags:
+#             entry_tags = [tag.strip() for tag in entry.tags.split(',')]
+#             all_tags.update(entry_tags)
+    
+#     context = {
+#         'entries': entries,
+#         'all_tags': sorted(all_tags),
+#         'selected_tag': tag_filter,
+#     }
+    
+#     return render(request, 'tracker/learning_journal.html', context)
+
 @login_required
 def learning_journal(request):
     # Get entries, ordered by most recent first
-    entries = LearningEntry.objects.filter(user=request.user).order_by('-date')
-    
+    learning_entries = LearningEntry.objects.filter(user=request.user).order_by('-date')
+
     # Filter by tag if provided
     tag_filter = request.GET.get('tag')
     if tag_filter:
-        entries = entries.filter(tags__icontains=tag_filter)
-    
+        learning_entries = learning_entries.filter(tags__icontains=tag_filter)
+
     # Get all unique tags for the filter dropdown
     all_tags = set()
     for entry in LearningEntry.objects.filter(user=request.user):
         if entry.tags:
             entry_tags = [tag.strip() for tag in entry.tags.split(',')]
             all_tags.update(entry_tags)
-    
+
     context = {
-        'entries': entries,
+        'learning_entries': learning_entries,
         'all_tags': sorted(all_tags),
         'selected_tag': tag_filter,
     }
-    
+
     return render(request, 'tracker/learning_journal.html', context)
+
+# @login_required
+# def add_learning_entry(request):
+#     if request.method == 'POST':
+#         form = LearningEntryForm(request.POST)
+#         if form.is_valid():
+#             entry = form.save(commit=False)
+#             entry.user = request.user
+#             entry.save()
+#             messages.success(request, 'Learning entry added successfully!')
+#             return redirect('tracker:learning_journal')
+#     else:
+#         form = LearningEntryForm(initial={'date': timezone.now().date()})
+    
+#     return render(request, 'tracker/add_learning_entry.html', {'form': form})
 
 @login_required
 def add_learning_entry(request):
@@ -597,7 +637,7 @@ def add_learning_entry(request):
             return redirect('tracker:learning_journal')
     else:
         form = LearningEntryForm(initial={'date': timezone.now().date()})
-    
+
     return render(request, 'tracker/add_learning_entry.html', {'form': form})
 
 @login_required
