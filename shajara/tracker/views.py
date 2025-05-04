@@ -44,37 +44,40 @@ def logout_view(request):
 def dashboard(request):
     # Get today's date
     today = timezone.now().date()
-    
+
     # Get tasks for today
     daily_plan = DailyPlan.objects.filter(user=request.user, date=today).first()
     if daily_plan:
         today_tasks = daily_plan.tasks.all()
     else:
         today_tasks = []
-    
+
     # Get recent activities
     recent_activities = Activity.objects.filter(
         user=request.user
     ).order_by('-date', '-start_time')[:5]
-    
+
     # Get productivity scores for the last 7 days
     last_week = today - timedelta(days=7)
     productivity_scores = ProductivityScore.objects.filter(
         user=request.user,
         date__gte=last_week
     ).order_by('date')
-    
+
     # Get recent learning entries
     recent_learning = LearningEntry.objects.filter(
         user=request.user
     ).order_by('-date')[:3]
-    
+
     # Calculate time spent today
-    today_time = Activity.objects.filter(
+    total_minutes = Activity.objects.filter(
         user=request.user,
         date=today
     ).aggregate(total_minutes=Sum('duration_minutes'))['total_minutes'] or 0
-    
+
+    hours = total_minutes // 60
+    remaining_minutes = total_minutes % 60
+
     # Get tasks by quadrant for quick access to Eisenhower Matrix
     tasks_by_quadrant = {
         'IU': Task.objects.filter(user=request.user, quadrant='IU', status__in=['P', 'IP']).count(),
@@ -82,16 +85,18 @@ def dashboard(request):
         'NI': Task.objects.filter(user=request.user, quadrant='NI', status__in=['P', 'IP']).count(),
         'NN': Task.objects.filter(user=request.user, quadrant='NN', status__in=['P', 'IP']).count(),
     }
-    
+
     context = {
         'today_tasks': today_tasks,
         'recent_activities': recent_activities,
         'productivity_scores': productivity_scores,
         'recent_learning': recent_learning,
-        'today_time': today_time,
+        'today_time': total_minutes,  # Keep the total minutes if you need it elsewhere
+        'today_hours': hours,
+        'today_remaining_minutes': remaining_minutes,
         'tasks_by_quadrant': tasks_by_quadrant,
     }
-    
+
     return render(request, 'tracker/dashboard.html', context)
 
 @login_required

@@ -1,11 +1,8 @@
 <!-- tracker/templates/tracker/dashboard.html -->
 {% extends 'tracker/base.html' %}
-
 {% block title %}Dashboard | Productivity Tracker{% endblock %}
-
 {% block content %}
 <h1 class="mb-4">Dashboard</h1>
-
 <div class="row">
     <!-- Today's Tasks Overview -->
     <div class="col-md-6">
@@ -44,7 +41,6 @@
             </div>
         </div>
     </div>
-    
     <!-- Eisenhower Matrix Overview -->
     <div class="col-md-6">
         <div class="card dashboard-card">
@@ -101,7 +97,7 @@
                     <div class="mb-3">
                         <p class="mb-0">Time spent today: 
                             <strong>{{ today_time|floatformat:0 }} minutes</strong>
-                            ({{ today_time|floatformat:0|divisibleby:60 }} hours {% if today_time %}{{ today_time|mod:60 }} minutes{% endif %})
+                            ({{ today_hours }} hours {% if today_remaining_minutes > 0 %}{{ today_remaining_minutes }} minutes{% endif %})
                         </p>
                     </div>
                     <ul class="list-group">
@@ -217,4 +213,44 @@
                     backgroundColor: 'rgba(13, 110, 253, 0.2)',
                     borderColor: 'rgba(13, 110, 253, 1)',
                     borderWidth: 1,
-                    tension
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Score'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Date'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `Score: ${context.raw}%`;
+                            }
+                        }
+                    }
+                },
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    });
+    {% endif %}
+</script>
+{% endblock %}
