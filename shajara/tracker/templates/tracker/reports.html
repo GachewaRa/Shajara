@@ -1,0 +1,163 @@
+{% extends 'tracker/base.html' %}
+{% load humanize %}
+{% block title %}Reports | Productivity Tracker{% endblock %}
+{% block content %}
+<div class="container mt-5" style="background-color: #F8F9FA; padding: 30px; border-radius: 8px;">
+    <h1 class="mb-4" style="color: #F06905;">Productivity Reports</h1>
+
+    <div class="mb-4">
+        <form method="get" class="row g-3 align-items-center">
+            <div class="col-auto">
+                <label for="startDate" class="form-label" style="color: #0A3226; font-weight: bold;">Start Date:</label>
+            </div>
+            <div class="col-auto">
+                <input type="date" class="form-control" id="startDate" name="start_date" value="{{ start_date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-auto">
+                <label for="endDate" class="form-label" style="color: #0A3226; font-weight: bold;">End Date:</label>
+            </div>
+            <div class="col-auto">
+                <input type="date" class="form-control" id="endDate" name="end_date" value="{{ end_date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-outline-secondary">Filter</button>
+            </div>
+        </form>
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-danger mt-2">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <h2 class="mb-3" style="color: #0A3226;">Period: {{ start_date|date:"F j, Y" }} - {{ end_date|date:"F j, Y" }} ({{ days_count }} days)</h2>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card" style="border: 1px solid #638D13; border-radius: 8px;">
+                <div class="card-body">
+                    <h5 class="card-title" style="color: #0A3226;">Average Productivity Score</h5>
+                    <p class="card-text" style="font-size: 1.5em;"><strong>{{ avg_score|floatformat:2 }} / 100</strong></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card" style="border: 1px solid #638D13; border-radius: 8px;">
+                <div class="card-body">
+                    <h5 class="card-title" style="color: #0A3226;">Average Daily Time Spent</h5>
+                    <p class="card-text" style="font-size: 1.5em;">
+                        <strong>{% if avg_daily_hours > 0 %}{{ avg_daily_hours }} hrs {{ avg_daily_minutes }} mins{% elif avg_daily_minutes > 0 %}{{ avg_daily_minutes }} mins{% else %}0 mins{% endif %}</strong>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3 class="mt-4 mb-3" style="color: #0A3226;">Time Spent by Category</h3>
+    {% if category_time %}
+        <ul class="list-group mb-4">
+            {% for item in category_time %}
+                <li class="list-group-item" style="border-color: #638D13;">
+                    <strong>{{ item.category }}:</strong>
+                    {% if item.hours > 0 %}
+                        {{ item.hours }} hrs {{ item.minutes }} mins
+                    {% elif item.minutes > 0 %}
+                        {{ item.minutes }} mins
+                    {% else %}
+                        0 mins
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-muted">No activity data to calculate time by category for this period.</p>
+    {% endif %}
+        
+
+    <h3 class="mt-4 mb-3" style="color: #0A3226;">Task Statistics</h3>
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card" style="border: 1px solid #638D13; border-radius: 8px;">
+                <div class="card-body">
+                    <h5 class="card-title" style="color: #0A3226;">New Tasks</h5>
+                    <p class="card-text" style="font-size: 1.5em;"><strong>{{ new_tasks }}</strong></p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="card" style="border: 1px solid #638D13; border-radius: 8px;">
+                <div class="card-body">
+                    <h5 class="card-title" style="color: #0A3226;">Completed Tasks</h5>
+                    <p class="card-text" style="font-size: 1.5em;"><strong>{{ completed_tasks }}</strong></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3 class="mt-4 mb-3" style="color: #0A3226;">Productivity Scores Over Time</h3>
+    {% if productivity_data %}
+        <div class="card mb-4" style="border: 1px solid #638D13; border-radius: 8px;">
+            <div class="card-body">
+                <ul class="list-group">
+                    {% for item in productivity_data %}
+                        <li class="list-group-item" style="border-color: #638D13;">
+                            <strong>{{ item.date|date:"F j, Y" }}:</strong> {{ item.score }} / 100
+                            {% if item.reflection %}
+                                <br><small class="text-muted">Reflection: {{ item.reflection|truncatechars:80 }}</small>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+                <p class="mt-2"><small class="text-muted">Showing productivity scores for each day in the selected range.</small></p>
+            </div>
+        </div>
+        {# If you have a charting library set up, you could add a chart here #}
+        {# <canvas id="productivityChart"></canvas> #}
+    {% else %}
+        <p class="text-muted">No productivity scores recorded for the selected date range.</p>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background-color: #034E64; /* Themed background */
+        color: #343a40; /* Default text color */
+    }
+    .card-title {
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+<!-- {# If you plan to use Chart.js, you would add the script block here #}
+{# {% block extra_js %} #}
+{# <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> #}
+{# <script> #}
+{#   const productivityCtx = document.getElementById('productivityChart').getContext('2d'); #}
+{#   const productivityChart = new Chart(productivityCtx, { #}
+{#     type: 'line', #}
+{#     data: { #}
+{#       labels: [{% for item in productivity_data %}'{{ item.date|date:"Y-m-d" }}',{% endfor %}], #}
+{#       datasets: [{ #}
+{#         label: 'Productivity Score', #}
+{#         data: [{% for item in productivity_data %}{{ item.score }},{% endfor %}], #}
+{#         borderColor: '#FEB909', #}
+{#         backgroundColor: 'rgba(254, 185, 9, 0.2)', #}
+{#         borderWidth: 2 #}
+{#       }] #}
+{#     }, #}
+{#     options: { #}
+{#       scales: { #}
+{#         y: { #}
+{#           beginAtZero: true, #}
+{#           max: 100 #}
+{#         } #}
+{#       } #}
+{#     } #}
+{#   }); #}
+{# </script> #}
+{# {% endblock %} #} -->

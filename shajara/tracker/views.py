@@ -610,20 +610,6 @@ def learning_journal(request):
 
     return render(request, 'tracker/learning_journal.html', context)
 
-# @login_required
-# def add_learning_entry(request):
-#     if request.method == 'POST':
-#         form = LearningEntryForm(request.POST)
-#         if form.is_valid():
-#             entry = form.save(commit=False)
-#             entry.user = request.user
-#             entry.save()
-#             messages.success(request, 'Learning entry added successfully!')
-#             return redirect('tracker:learning_journal')
-#     else:
-#         form = LearningEntryForm(initial={'date': timezone.now().date()})
-    
-#     return render(request, 'tracker/add_learning_entry.html', {'form': form})
 
 @login_required
 def add_learning_entry(request):
@@ -671,7 +657,7 @@ def reports(request):
     # Default to showing the last 30 days
     end_date = timezone.now().date()
     start_date = end_date - timedelta(days=30)
-    
+
     # Allow date range filtering
     if request.GET.get('start_date') and request.GET.get('end_date'):
         try:
@@ -679,34 +665,42 @@ def reports(request):
             end_date = datetime.strptime(request.GET.get('end_date'), '%Y-%m-%d').date()
         except ValueError:
             messages.error(request, 'Invalid date format')
-    
+
     # Get productivity scores in the date range
     productivity_data = ProductivityScore.objects.filter(
         user=request.user,
         date__gte=start_date,
         date__lte=end_date
     ).order_by('date')
-    
+
     # Get activities in the date range
     activities = Activity.objects.filter(
         user=request.user,
         date__gte=start_date,
         date__lte=end_date
     )
-    
+
     # Calculate time spent by category
+    category_time_list = []
     category_time = activities.values('category').annotate(
         total_time=Sum('duration_minutes')
     ).order_by('-total_time')
-    
+    for item in category_time:
+        total_minutes = item['total_time'] or 0
+        hours = int(total_minutes // 60)
+        minutes = int(total_minutes % 60)
+        category_time_list.append({'category': item['category'], 'hours': hours, 'minutes': minutes})
+
     # Calculate average daily time spent
     days_count = (end_date - start_date).days + 1
-    total_time = activities.aggregate(total=Sum('duration_minutes'))['total'] or 0
-    avg_daily_time = total_time / days_count if days_count > 0 else 0
-    
+    total_time_minutes = activities.aggregate(total=Sum('duration_minutes'))['total'] or 0
+    avg_daily_minutes = total_time_minutes / days_count if days_count > 0 else 0
+    avg_daily_hours = int(avg_daily_minutes // 60)
+    avg_daily_remainder_minutes = int(avg_daily_minutes % 60)
+
     # Calculate average productivity score
     avg_score = productivity_data.aggregate(avg=Avg('score'))['avg'] or 0
-    
+
     # Calculate task completion statistics
     completed_tasks = Task.objects.filter(
         user=request.user,
@@ -714,23 +708,24 @@ def reports(request):
         created_at__date__gte=start_date,
         created_at__date__lte=end_date
     ).count()
-    
+
     new_tasks = Task.objects.filter(
         user=request.user,
         created_at__date__gte=start_date,
         created_at__date__lte=end_date
     ).count()
-    
+
     context = {
         'start_date': start_date,
         'end_date': end_date,
         'productivity_data': productivity_data,
-        'category_time': category_time,
-        'avg_daily_time': avg_daily_time,
+        'category_time': category_time_list,
+        'avg_daily_hours': avg_daily_hours,
+        'avg_daily_minutes': avg_daily_remainder_minutes,
         'avg_score': avg_score,
         'completed_tasks': completed_tasks,
         'new_tasks': new_tasks,
         'days_count': days_count,
     }
-    
+
     return render(request, 'tracker/reports.html', context)
