@@ -8,7 +8,6 @@ from django.db.models import Sum, Count, Avg
 from datetime import datetime, timedelta
 from django.http import JsonResponse
 from django.urls import reverse
-
 from .models import Task, Activity, DailyPlan, ProductivityScore, LearningEntry
 from .forms import (TaskForm, ActivityForm, DailyPlanForm, ProductivityScoreForm, 
                   LearningEntryForm, UserRegistrationForm)
@@ -41,64 +40,6 @@ def logout_view(request):
     logout(request)
     return redirect('tracker:login')
 
-# @login_required
-# def dashboard(request):
-#     # Get today's date
-#     today = timezone.now().date()
-
-#     # Get tasks for today
-#     today_tasks = Task.objects.filter(
-#         user=request.user,
-#         deadline__date=today,
-#         status__in=['P', 'IP']  # Pending or In Progress
-#     ).order_by('deadline')  # Order by closest deadline first
-
-#     # Get recent activities
-#     recent_activities = Activity.objects.filter(
-#         user=request.user
-#     ).order_by('-date', '-start_time')[:5]
-
-#     # Get productivity scores for the last 7 days
-#     last_week = today - timedelta(days=7)
-#     productivity_scores = ProductivityScore.objects.filter(
-#         user=request.user,
-#         date__gte=last_week
-#     ).order_by('date')
-
-#     # Get recent learning entries
-#     recent_learning = LearningEntry.objects.filter(
-#         user=request.user
-#     ).order_by('-date')[:3]
-
-#     # Calculate time spent today
-#     total_minutes = Activity.objects.filter(
-#         user=request.user,
-#         date=today
-#     ).aggregate(total_minutes=Sum('duration_minutes'))['total_minutes'] or 0
-
-#     hours = total_minutes // 60
-#     remaining_minutes = total_minutes % 60
-
-#     # Get tasks by quadrant for quick access to Eisenhower Matrix
-#     tasks_by_quadrant = {
-#         'IU': Task.objects.filter(user=request.user, quadrant='IU', status__in=['P', 'IP']).count(),
-#         'IN': Task.objects.filter(user=request.user, quadrant='IN', status__in=['P', 'IP']).count(),
-#         'NI': Task.objects.filter(user=request.user, quadrant='NI', status__in=['P', 'IP']).count(),
-#         'NN': Task.objects.filter(user=request.user, quadrant='NN', status__in=['P', 'IP']).count(),
-#     }
-
-#     context = {
-#         'today_tasks': today_tasks,
-#         'recent_activities': recent_activities,
-#         'productivity_scores': productivity_scores,
-#         'recent_learning': recent_learning,
-#         'today_time': total_minutes,  # Keep the total minutes if you need it elsewhere
-#         'today_hours': hours,
-#         'today_remaining_minutes': remaining_minutes,
-#         'tasks_by_quadrant': tasks_by_quadrant,
-#     }
-
-#     return render(request, 'tracker/dashboard.html', context)
 
 @login_required
 def dashboard(request):
@@ -459,70 +400,6 @@ def daily_plan_detail(request, date=None):
 
     return render(request, 'tracker/daily_plan_detail.html', context)
 
-@login_required
-def productivity_score(request):
-    # Get today's date
-    today = timezone.now().date()
-    
-    # Check if a score exists for today
-    score = ProductivityScore.objects.filter(user=request.user, date=today).first()
-    
-    # Get the daily plan for today (if it exists)
-    plan = DailyPlan.objects.filter(user=request.user, date=today).first()
-    
-    # Calculate completion rate if plan exists
-    completion_rate = 0
-    completed_tasks = 0
-    planned_tasks = 0
-    
-    if plan:
-        planned_tasks = plan.tasks.count()
-        completed_tasks = plan.tasks.filter(status='C').count()
-        if planned_tasks > 0:
-            completion_rate = (completed_tasks / planned_tasks) * 100
-    
-    if request.method == 'POST':
-        form = ProductivityScoreForm(request.POST, instance=score)
-        if form.is_valid():
-            productivity_score = form.save(commit=False)
-            productivity_score.user = request.user
-            productivity_score.planned_tasks = planned_tasks
-            productivity_score.completed_tasks = completed_tasks
-            productivity_score.save()
-            messages.success(request, 'Productivity score submitted successfully!')
-            return redirect('tracker:dashboard')
-    else:
-        initial_data = {'date': today}
-        if score is None and completion_rate > 0:
-            # Suggest a score based on completion rate
-            initial_data['score'] = int(completion_rate)
-        form = ProductivityScoreForm(instance=score, initial=initial_data)
-    
-    # Get scores for the last 7 days for trend analysis
-    last_week = today - timedelta(days=7)
-    previous_scores = ProductivityScore.objects.filter(
-        user=request.user,
-        date__gte=last_week,
-        date__lt=today
-    ).order_by('date')
-
-    recent_scores = ProductivityScore.objects.filter(
-        user=request.user,
-        date__lte=timezone.now().date()
-    ).order_by('-date')[:7]
-    
-    context = {
-        'form': form,
-        'plan': plan,
-        'completion_rate': completion_rate,
-        'completed_tasks': completed_tasks,
-        'planned_tasks': planned_tasks,
-        'previous_scores': previous_scores,
-        'recent_scores': recent_scores,
-    }
-    
-    return render(request, 'tracker/productivity_score.html', context)
-
 
 @login_required
 def learning_journal(request):
@@ -668,3 +545,132 @@ def reports(request):
     }
 
     return render(request, 'tracker/reports.html', context)
+
+
+
+@login_required
+def productivity_dashboard(request):
+    """View for displaying productivity scores and allowing users to add new ones"""
+    today = timezone.now().date()
+    
+    # Get the last 7 days of productivity scores
+    seven_days_ago = today - timedelta(days=6)
+    productivity_scores = ProductivityScore.objects.filter(
+        user=request.user,
+        date__gte=seven_days_ago,
+        date__lte=today
+    ).order_by('-date')
+    
+    # Check if today's score exists
+    today_score = ProductivityScore.objects.filter(user=request.user, date=today).first()
+    
+    if request.method == 'POST':
+        # If today's score exists, update it; otherwise create new
+        if today_score:
+            form = ProductivityScoreForm(request.POST, instance=today_score)
+        else:
+            form = ProductivityScoreForm(request.POST)
+            
+        if form.is_valid():
+            score_instance = form.save(commit=False)
+            score_instance.user = request.user
+            
+            # Calculate planned tasks (tasks with deadline today)
+            planned_tasks = Task.objects.filter(
+                user=request.user,
+                deadline__date=today
+            ).count()
+            
+            # Calculate completed tasks (tasks completed today)
+            completed_tasks = Task.objects.filter(
+                user=request.user,
+                status='C',
+                completed_at__date=today
+            ).count()
+            
+            score_instance.planned_tasks = planned_tasks
+            score_instance.completed_tasks = completed_tasks
+            
+            # If user didn't provide a score, calculate one
+            if not score_instance.score:
+                if planned_tasks > 0:
+                    completion_rate = (completed_tasks / planned_tasks) * 100
+                    # Base score on completion rate but cap at 100
+                    score_instance.score = min(int(completion_rate), 100)
+                else:
+                    # If no planned tasks but some completed, give a score of 80
+                    score_instance.score = 80 if completed_tasks > 0 else 60
+            
+            score_instance.save()
+            return redirect('tracker:productivity_dashboard')
+    else:
+        # For GET request, create a form for today
+        if today_score:
+            form = ProductivityScoreForm(instance=today_score)
+        else:
+            form = ProductivityScoreForm(initial={'date': today})
+    
+    # Calculate stats for the past 7 days
+    dates = []
+    scores = []
+    
+    # Create a dictionary to store existing scores
+    score_dict = {score.date: score for score in productivity_scores}
+    
+    # Generate dates for the past 7 days
+    for i in range(6, -1, -1):
+        date = today - timedelta(days=i)
+        dates.append(date.strftime('%b %d'))
+        
+        # If we have a score for this date, use it; otherwise use 0
+        if date in score_dict:
+            scores.append(score_dict[date].score)
+        else:
+            scores.append(0)
+
+    total_score = sum(scores) if scores else 0
+
+    context = {
+        'form': form,
+        'productivity_scores': productivity_scores,
+        'dates': dates,
+        'scores': scores,
+        'total_score': total_score,
+        'today': today
+    }
+    
+    return render(request, 'tracker/productivity_dashboard.html', context)
+
+@login_required
+def edit_productivity_score(request, score_id):
+    """View for editing an existing productivity score"""
+    score = get_object_or_404(ProductivityScore, id=score_id, user=request.user)
+    
+    if request.method == 'POST':
+        form = ProductivityScoreForm(request.POST, instance=score)
+        if form.is_valid():
+            score_instance = form.save(commit=False)
+            
+            # Keep the planned and completed tasks as they were originally calculated
+            score_instance.save()
+            return redirect('tracker:productivity_dashboard')
+    else:
+        form = ProductivityScoreForm(instance=score)
+    
+    context = {
+        'form': form,
+        'score': score
+    }
+    
+    return render(request, 'tracker/edit_productivity_score.html', context)
+
+@login_required
+def delete_productivity_score(request, score_id):
+    """View for deleting a productivity score"""
+    score = get_object_or_404(ProductivityScore, id=score_id, user=request.user)
+    
+    if request.method == 'POST':
+        score.delete()
+        return redirect('tracker:productivity_dashboard')
+    
+    return redirect('tracker:productivity_dashboard')

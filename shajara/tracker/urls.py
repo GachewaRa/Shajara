@@ -17,7 +17,6 @@ urlpatterns = [
     path('tasks/<int:pk>/delete/', views.delete_task, name='delete_task'),
     path('daily-plan/', views.daily_plan, name='daily_plan'),
     path('daily-plan/<str:date>/', views.daily_plan_detail, name='daily_plan_detail'),
-    path('productivity-score/', views.productivity_score, name='productivity_score'),
     path('learning-journal/', views.learning_journal, name='learning_journal'),
     path('learning-journal/add/', views.add_learning_entry, name='add_learning_entry'),
     path('learning-journal/<int:pk>/edit/', views.edit_learning_entry, name='edit_learning_entry'),
@@ -28,4 +27,8 @@ urlpatterns = [
     path('register/', views.register, name='register'),
     path('tasks/delete/<int:pk>/', views.delete_task, name='delete_task'),
     path('task/<int:pk>/toggle-status/', views.toggle_task_status, name='toggle_task_status'),
+
+    path('productivity/', views.productivity_dashboard, name='productivity_dashboard'),
+    path('productivity/edit/<int:score_id>/', views.edit_productivity_score, name='edit_productivity_score'),
+    path('productivity/delete/<int:score_id>/', views.delete_productivity_score, name='delete_productivity_score'),
 ]
