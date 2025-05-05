@@ -1,163 +1,365 @@
 {% extends 'tracker/base.html' %}
 {% load humanize %}
-{% block title %}Reports | Productivity Tracker{% endblock %}
+{% block title %}Reports | Shajara{% endblock %}
+
 {% block content %}
-<div class="container mt-5" style="background-color: #F8F9FA; padding: 30px; border-radius: 8px;">
-    <h1 class="mb-4" style="color: #F06905;">Productivity Reports</h1>
-
-    <div class="mb-4">
-        <form method="get" class="row g-3 align-items-center">
-            <div class="col-auto">
-                <label for="startDate" class="form-label" style="color: #0A3226; font-weight: bold;">Start Date:</label>
-            </div>
-            <div class="col-auto">
-                <input type="date" class="form-control" id="startDate" name="start_date" value="{{ start_date|date:'Y-m-d' }}">
-            </div>
-            <div class="col-auto">
-                <label for="endDate" class="form-label" style="color: #0A3226; font-weight: bold;">End Date:</label>
-            </div>
-            <div class="col-auto">
-                <input type="date" class="form-control" id="endDate" name="end_date" value="{{ end_date|date:'Y-m-d' }}">
-            </div>
-            <div class="col-auto">
-                <button type="submit" class="btn btn-outline-secondary">Filter</button>
-            </div>
-        </form>
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-danger mt-2">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
-    </div>
-
-    <h2 class="mb-3" style="color: #0A3226;">Period: {{ start_date|date:"F j, Y" }} - {{ end_date|date:"F j, Y" }} ({{ days_count }} days)</h2>
-
-    <div class="row">
-        <div class="col-md-6 mb-4">
-            <div class="card" style="border: 1px solid #638D13; border-radius: 8px;">
-                <div class="card-body">
-                    <h5 class="card-title" style="color: #0A3226;">Average Productivity Score</h5>
-                    <p class="card-text" style="font-size: 1.5em;"><strong>{{ avg_score|floatformat:2 }} / 100</strong></p>
-                </div>
-            </div>
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="mb-0">Productivity Reports</h2>
         </div>
-
-        <div class="col-md-6 mb-4">
-            <div class="card" style="border: 1px solid #638D13; border-radius: 8px;">
+        <div class="card-body">
+            <!-- Date Filter -->
+            <div class="card mb-4">
                 <div class="card-body">
-                    <h5 class="card-title" style="color: #0A3226;">Average Daily Time Spent</h5>
-                    <p class="card-text" style="font-size: 1.5em;">
-                        <strong>{% if avg_daily_hours > 0 %}{{ avg_daily_hours }} hrs {{ avg_daily_minutes }} mins{% elif avg_daily_minutes > 0 %}{{ avg_daily_minutes }} mins{% else %}0 mins{% endif %}</strong>
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <h3 class="mt-4 mb-3" style="color: #0A3226;">Time Spent by Category</h3>
-    {% if category_time %}
-        <ul class="list-group mb-4">
-            {% for item in category_time %}
-                <li class="list-group-item" style="border-color: #638D13;">
-                    <strong>{{ item.category }}:</strong>
-                    {% if item.hours > 0 %}
-                        {{ item.hours }} hrs {{ item.minutes }} mins
-                    {% elif item.minutes > 0 %}
-                        {{ item.minutes }} mins
-                    {% else %}
-                        0 mins
+                    <form method="get" class="row g-3 align-items-center">
+                        <div class="col-md-3">
+                            <label for="startDate" class="form-label">Start Date</label>
+                            <div class="input-group">
+                                <input type="date" class="form-control" id="startDate" name="start_date" 
+                                       value="{{ start_date|date:'Y-m-d' }}">
+                                <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="endDate" class="form-label">End Date</label>
+                            <div class="input-group">
+                                <input type="date" class="form-control" id="endDate" name="end_date" 
+                                       value="{{ end_date|date:'Y-m-d' }}">
+                                <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary mt-4">
+                                <i class="fas fa-filter me-1"></i> Filter
+                            </button>
+                        </div>
+                    </form>
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-danger mt-3">
+                                <i class="fas fa-exclamation-circle me-2"></i>{{ message }}
+                            </div>
+                        {% endfor %}
                     {% endif %}
-                </li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p class="text-muted">No activity data to calculate time by category for this period.</p>
-    {% endif %}
-        
-
-    <h3 class="mt-4 mb-3" style="color: #0A3226;">Task Statistics</h3>
-    <div class="row">
-        <div class="col-md-6 mb-4">
-            <div class="card" style="border: 1px solid #638D13; border-radius: 8px;">
-                <div class="card-body">
-                    <h5 class="card-title" style="color: #0A3226;">New Tasks</h5>
-                    <p class="card-text" style="font-size: 1.5em;"><strong>{{ new_tasks }}</strong></p>
                 </div>
             </div>
-        </div>
-        <div class="col-md-6 mb-4">
-            <div class="card" style="border: 1px solid #638D13; border-radius: 8px;">
+
+            <!-- Period Summary -->
+            <div class="alert alert-info mb-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-calendar-alt me-2"></i>
+                        <strong>Reporting Period:</strong> {{ start_date|date:"F j, Y" }} - {{ end_date|date:"F j, Y" }}
+                    </div>
+                    <div>
+                        <span class="badge bg-primary">{{ days_count }} day{{ days_count|pluralize }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Key Metrics -->
+            <div class="row mb-4">
+                <div class="col-md-6 mb-3">
+                    <div class="card h-100 metric-card">
+                        <div class="card-body text-center">
+                            <div class="metric-value">{{ avg_score|floatformat:2 }}</div>
+                            <div class="metric-label">Average Productivity Score</div>
+                            <div class="progress mt-3">
+                                <div class="progress-bar bg-gradient" 
+                                     role="progressbar" 
+                                     style="width: {{ avg_score }}%" 
+                                     aria-valuenow="{{ avg_score }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="card h-100 metric-card">
+                        <div class="card-body text-center">
+                            <div class="metric-value">
+                                {% if avg_daily_hours > 0 %}{{ avg_daily_hours }}h {{ avg_daily_minutes }}m
+                                {% elif avg_daily_minutes > 0 %}{{ avg_daily_minutes }}m
+                                {% else %}0m{% endif %}
+                            </div>
+                            <div class="metric-label">Avg Daily Time Spent</div>
+                            <div class="time-visualization mt-3">
+                                <i class="fas fa-clock fa-2x text-muted"></i>
+                                <div class="time-bar">
+                                    <div class="time-fill" style="width: {% widthratio avg_daily_hours 24 100 %}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Time by Category -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="mb-0"><i class="fas fa-tags me-2"></i>Time Spent by Category</h3>
+                </div>
                 <div class="card-body">
-                    <h5 class="card-title" style="color: #0A3226;">Completed Tasks</h5>
-                    <p class="card-text" style="font-size: 1.5em;"><strong>{{ completed_tasks }}</strong></p>
+                    {% if category_time %}
+                        <div class="category-time-chart">
+                            {% for item in category_time %}
+                                <div class="category-item mb-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span class="category-name">{{ item.category }}</span>
+                                        <span class="category-time">
+                                            {% if item.hours > 0 %}{{ item.hours }}h {{ item.minutes }}m
+                                            {% elif item.minutes > 0 %}{{ item.minutes }}m
+                                            {% else %}0m{% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="progress" style="height: 10px;">
+                                        <div class="progress-bar" 
+                                             role="progressbar" 
+                                             style="width: {% widthratio item.total_minutes max_category_minutes 100 %}%; 
+                                                    background-color: {{ item.color }};"></div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No activity data by category for this period</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Task Statistics -->
+            <div class="row mb-4">
+                <div class="col-md-6 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <div class="stat-value text-success">{{ new_tasks }}</div>
+                            <div class="stat-label">New Tasks Created</div>
+                            <i class="stat-icon fas fa-tasks text-success mt-3"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <div class="stat-value text-primary">{{ completed_tasks }}</div>
+                            <div class="stat-label">Tasks Completed</div>
+                            <i class="stat-icon fas fa-check-circle text-primary mt-3"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Productivity Timeline -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0"><i class="fas fa-chart-line me-2"></i>Productivity Timeline</h3>
+                </div>
+                <div class="card-body">
+                    {% if productivity_data %}
+                        <div class="timeline">
+                            {% for item in productivity_data %}
+                                <div class="timeline-item">
+                                    <div class="timeline-date">{{ item.date|date:"M j" }}</div>
+                                    <div class="timeline-dot"></div>
+                                    <div class="timeline-content">
+                                        <div class="d-flex justify-content-between">
+                                            <strong>{{ item.date|date:"l" }}</strong>
+                                            <span class="score-badge">{{ item.score }}/100</span>
+                                        </div>
+                                        {% if item.reflection %}
+                                            <div class="timeline-reflection mt-2">
+                                                <i class="fas fa-comment-alt me-2"></i>
+                                                {{ item.reflection|truncatechars:100 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No productivity scores recorded for this period</p>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
-
-    <h3 class="mt-4 mb-3" style="color: #0A3226;">Productivity Scores Over Time</h3>
-    {% if productivity_data %}
-        <div class="card mb-4" style="border: 1px solid #638D13; border-radius: 8px;">
-            <div class="card-body">
-                <ul class="list-group">
-                    {% for item in productivity_data %}
-                        <li class="list-group-item" style="border-color: #638D13;">
-                            <strong>{{ item.date|date:"F j, Y" }}:</strong> {{ item.score }} / 100
-                            {% if item.reflection %}
-                                <br><small class="text-muted">Reflection: {{ item.reflection|truncatechars:80 }}</small>
-                            {% endif %}
-                        </li>
-                    {% endfor %}
-                </ul>
-                <p class="mt-2"><small class="text-muted">Showing productivity scores for each day in the selected range.</small></p>
-            </div>
-        </div>
-        {# If you have a charting library set up, you could add a chart here #}
-        {# <canvas id="productivityChart"></canvas> #}
-    {% else %}
-        <p class="text-muted">No productivity scores recorded for the selected date range.</p>
-    {% endif %}
-
 </div>
 {% endblock %}
 
 {% block extra_css %}
 <style>
-    body {
-        background-color: #034E64; /* Themed background */
-        color: #343a40; /* Default text color */
+    .metric-card {
+        border-left: 4px solid var(--turquoise-blue);
+        transition: all 0.3s ease;
     }
-    .card-title {
+    
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--tropical-green);
+    }
+    
+    .metric-label {
+        font-size: 1.1rem;
+        color: var(--dark-text-color);
         margin-bottom: 1rem;
+    }
+    
+    .progress {
+        background-color: #e9ecef;
+        border-radius: 10px;
+        height: 8px;
+    }
+    
+    .progress-bar.bg-gradient {
+        background: linear-gradient(90deg, var(--turquoise-blue), var(--tropical-green));
+    }
+    
+    .time-visualization {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .time-bar {
+        flex-grow: 1;
+        height: 8px;
+        background-color: #e9ecef;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    
+    .time-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--turquoise-blue), var(--tropical-green));
+    }
+    
+    .category-time-chart {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .category-name {
+        font-weight: 500;
+    }
+    
+    .category-time {
+        color: var(--tropical-green);
+        font-weight: 500;
+    }
+    
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+    }
+    
+    .stat-label {
+        font-size: 1.1rem;
+        color: var(--dark-text-color);
+    }
+    
+    .stat-icon {
+        font-size: 2.5rem;
+        opacity: 0.7;
+    }
+    
+    .timeline {
+        position: relative;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 18px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background-color: var(--turquoise-blue);
+    }
+    
+    .timeline-item {
+        position: relative;
+        padding-left: 50px;
+        margin-bottom: 25px;
+    }
+    
+    .timeline-date {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background-color: var(--turquoise-blue);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+    
+    .timeline-dot {
+        position: absolute;
+        left: 16px;
+        top: 8px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: var(--tropical-green);
+        border: 2px solid white;
+    }
+    
+    .timeline-content {
+        background-color: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .score-badge {
+        background-color: var(--turquoise-blue);
+        color: white;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+    }
+    
+    .timeline-reflection {
+        font-size: 0.9rem;
+        color: var(--dark-text-color);
+        background-color: rgba(77, 208, 225, 0.1);
+        padding: 8px 12px;
+        border-radius: 4px;
+        border-left: 3px solid var(--turquoise-blue);
     }
 </style>
 {% endblock %}
 
-<!-- {# If you plan to use Chart.js, you would add the script block here #}
-{# {% block extra_js %} #}
-{# <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> #}
-{# <script> #}
-{#   const productivityCtx = document.getElementById('productivityChart').getContext('2d'); #}
-{#   const productivityChart = new Chart(productivityCtx, { #}
-{#     type: 'line', #}
-{#     data: { #}
-{#       labels: [{% for item in productivity_data %}'{{ item.date|date:"Y-m-d" }}',{% endfor %}], #}
-{#       datasets: [{ #}
-{#         label: 'Productivity Score', #}
-{#         data: [{% for item in productivity_data %}{{ item.score }},{% endfor %}], #}
-{#         borderColor: '#FEB909', #}
-{#         backgroundColor: 'rgba(254, 185, 9, 0.2)', #}
-{#         borderWidth: 2 #}
-{#       }] #}
-{#     }, #}
-{#     options: { #}
-{#       scales: { #}
-{#         y: { #}
-{#           beginAtZero: true, #}
-{#           max: 100 #}
-{#         } #}
-{#       } #}
-{#     } #}
-{#   }); #}
-{# </script> #}
-{# {% endblock %} #} -->
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Generate random colors for categories if not provided by backend
+    document.querySelectorAll('.progress-bar').forEach(bar => {
+        if (!bar.style.backgroundColor) {
+            const hue = Math.floor(Math.random() * 360);
+            bar.style.backgroundColor = `hsl(${hue}, 70%, 60%)`;
+        }
+    });
+});
+</script>
+{% endblock %}

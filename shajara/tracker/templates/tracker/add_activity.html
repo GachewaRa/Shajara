@@ -1,16 +1,30 @@
 {% extends 'tracker/base.html' %}
-{% block title %}Add Activity | Productivity Tracker{% endblock %}
+{% block title %}Add Activity | Shajara{% endblock %}
+
 {% block content %}
-<div class="container mt-5" style="background-color: #F8F9FA; padding: 30px; border-radius: 8px;">
-    <h1 class="mb-4" style="color: #F06905;">Add New Activity</h1>
-    <div class="card" style="border: 1px solid #638D13; border-radius: 8px;">
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="mb-0">Add New Activity</h2>
+        </div>
         <div class="card-body">
             <form method="post">
                 {% csrf_token %}
                 {% for field in form %}
                     <div class="mb-3">
-                        <label for="{{ field.id_for_label }}" class="form-label" style="color: #0A3226; font-weight: bold;">{{ field.label }}</label>
-                        {{ field }}
+                        <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                        
+                        {% if field.field.widget.input_type == 'datetime-local' or field.field.widget.input_type == 'date' or field.field.widget.input_type == 'time' %}
+                        <div class="input-group">
+                            {{ field }}
+                            <span class="input-group-text bg-white">
+                                <i class="fas fa-calendar-alt text-secondary"></i>
+                            </span>
+                        </div>
+                        {% else %}
+                            {{ field }}
+                        {% endif %}
+                        
                         {% if field.errors %}
                             <div class="alert alert-danger mt-2">{{ field.errors }}</div>
                         {% endif %}
@@ -19,8 +33,12 @@
                         {% endif %}
                     </div>
                 {% endfor %}
-                <button type="submit" class="btn btn-primary" style="background-color: #FEB909; color: #212529; border: none;">Add Activity</button>
-                <a href="{% url 'tracker:activity_log' %}" class="btn btn-secondary ms-2">Cancel</a>
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus-circle me-2"></i>Add Activity
+                    </button>
+                    <a href="{% url 'tracker:activity_log' %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+                </div>
             </form>
         </div>
     </div>
@@ -29,21 +47,49 @@
 
 {% block extra_css %}
 <style>
-    body {
-        background-color: #034E64; /* Themed background */
-        color: #343a40; /* Default text color */
+    .card {
+        border-left: 4px solid var(--turquoise-blue);
     }
+    
     .form-control {
-        border: 1px solid #638D13;
+        border: 1px solid var(--turquoise-blue);
     }
+    
     .form-control:focus {
-        border-color: #FEB909;
-        box-shadow: 0 0 0 0.2rem rgba(254, 185, 9, 0.25);
+        border-color: var(--tropical-green);
+        box-shadow: 0 0 0 0.2rem rgba(10, 50, 38, 0.1);
     }
+    
     .alert-danger {
-        background-color: #ffe0b2; /* Light orange for errors */
+        background-color: #ffe0b2;
         border-color: #ffb300;
         color: #614a19;
+        padding: 8px 12px;
+        border-radius: 4px;
+    }
+    
+    /* Special styling for datetime inputs */
+    .input-group-text {
+        border-left: none;
+        background-color: white;
+    }
+    
+    input[type="date"],
+    input[type="time"],
+    input[type="datetime-local"] {
+        border-right: none;
+    }
+    
+    input[type="date"]:focus,
+    input[type="time"]:focus,
+    input[type="datetime-local"]:focus {
+        box-shadow: none;
+    }
+    
+    input[type="date"]:focus + .input-group-text,
+    input[type="time"]:focus + .input-group-text,
+    input[type="datetime-local"]:focus + .input-group-text {
+        border-color: var(--tropical-green);
     }
 </style>
 {% endblock %}

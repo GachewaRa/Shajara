@@ -1,15 +1,18 @@
 {% extends 'tracker/base.html' %}
-{% block title %}Add Task | Productivity Tracker{% endblock %}
+{% block title %}Add Task | Shajara{% endblock %}
+
 {% block content %}
-<div class="container mt-5" style="background-color: #F8F9FA; padding: 30px; border-radius: 8px;">
-    <h1 class="mb-4" style="color: #F06905;">Add New Task</h1>
-    <div class="card" style="border: 1px solid #638D13; border-radius: 8px;">
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="mb-0">Add New Task</h2>
+        </div>
         <div class="card-body">
             <form method="post">
                 {% csrf_token %}
                 {% for field in form %}
                     <div class="mb-3">
-                        <label for="{{ field.id_for_label }}" class="form-label" style="color: #0A3226; font-weight: bold;">{{ field.label }}</label>
+                        <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
                         {{ field }}
                         {% if field.errors %}
                             <div class="alert alert-danger mt-2">{{ field.errors }}</div>
@@ -20,8 +23,12 @@
                     </div>
                 {% endfor %}
                 <input type="hidden" name="next" value="{{ request.GET.next|default:task_list_url }}">
-                <button type="submit" class="btn btn-primary" style="background-color: #FEB909; color: #212529; border: none;">Add Task</button>
-                <a href="{{ request.GET.next|default:task_list_url }}" class="btn btn-secondary ms-2">Cancel</a>
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus-circle me-2"></i>Add Task
+                    </button>
+                    <a href="{{ request.GET.next|default:task_list_url }}" class="btn btn-outline-secondary ms-2">Cancel</a>
+                </div>
             </form>
         </div>
     </div>
@@ -30,21 +37,25 @@
 
 {% block extra_css %}
 <style>
-    body {
-        background-color: #034E64; /* Themed background */
-        color: #343a40; /* Default text color */
+    .card {
+        border-left: 4px solid var(--turquoise-blue);
     }
+    
     .form-control {
-        border: 1px solid #638D13;
+        border: 1px solid var(--turquoise-blue);
     }
+    
     .form-control:focus {
-        border-color: #FEB909;
-        box-shadow: 0 0 0 0.2rem rgba(254, 185, 9, 0.25);
+        border-color: var(--tropical-green);
+        box-shadow: 0 0 0 0.2rem rgba(10, 50, 38, 0.1);
     }
+    
     .alert-danger {
-        background-color: #ffe0b2; /* Light orange for errors */
+        background-color: #ffe0b2;
         border-color: #ffb300;
         color: #614a19;
+        padding: 8px 12px;
+        border-radius: 4px;
     }
 </style>
 {% endblock %}

@@ -26,7 +26,6 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('register/', views.register, name='register'),
-    path('tasks/delete/<int:pk>/', views.delete_task, name='delete_task'),     # You might have this already
-    path('tasks/complete-ajax/', views.complete_task_ajax, name='complete_task_ajax'),
-    path('tasks/delete-ajax/', views.delete_task_ajax, name='delete_task_ajax'),
+    path('tasks/delete/<int:pk>/', views.delete_task, name='delete_task'),
+    path('task/<int:pk>/toggle-status/', views.toggle_task_status, name='toggle_task_status'),
 ]

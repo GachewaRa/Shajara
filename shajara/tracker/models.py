@@ -28,6 +28,16 @@ class Task(models.Model):
     estimated_time = models.IntegerField(help_text="Estimated time in minutes", blank=True, null=True)
     actual_time = models.IntegerField(help_text="Actual time spent in minutes", blank=True, null=True)
     status = models.CharField(max_length=2, choices=STATUS_CHOICES, default='P')
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        # Update completed_at when status changes to 'Completed'
+        if self.status == 'C' and not self.completed_at:
+            self.completed_at = timezone.now()
+        # Clear completed_at if status changes from 'Completed'
+        elif self.status != 'C' and self.completed_at:
+            self.completed_at = None
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.title

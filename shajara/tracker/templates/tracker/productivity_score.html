@@ -5,91 +5,122 @@
 
 {% block content %}
 <div class="container">
-    <div class="card mb-4">
-        <div class="card-header">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
             <h2 class="mb-0">Productivity Score</h2>
+            <div>
+                <a href="{% url 'tracker:productivity_score' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-redo-alt me-1"></i> Reset
+                </a>
+            </div>
         </div>
         <div class="card-body">
-            <form method="get" class="row g-3 align-items-center mb-4">
-                <div class="col-auto">
-                    <label for="dateFilter" class="form-label fw-bold mb-0">View Score for Date:</label>
-                </div>
-                <div class="col-md-3">
-                    <input type="date" class="form-control" id="dateFilter" name="date" value="{{ selected_date|date:'Y-m-d' }}">
-                </div>
-                <div class="col-auto">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-search me-1"></i> View
-                    </button>
-                </div>
-                <div class="col-auto ms-auto">
-                    <a href="{% url 'tracker:productivity_score' %}" class="btn btn-outline-primary">
-                        <i class="fas fa-redo-alt me-1"></i> Reset Date
-                    </a>
-                </div>
-            </form>
-            
+            <!-- Date Filter Form -->
             <div class="card mb-4">
-                <div class="card-header bg-transparent">
-                    <h3 class="mb-0">Score for {{ selected_date|date:"l, F j, Y" }}</h3>
+                <div class="card-body">
+                    <form method="get" class="row g-3 align-items-center">
+                        <div class="col-md-4">
+                            <label for="dateFilter" class="form-label">Select Date</label>
+                            <div class="input-group">
+                                <input type="date" class="form-control" id="dateFilter" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search me-1"></i> View
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Score Display -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="mb-0">
+                        <i class="fas fa-chart-line me-2"></i>Score for {{ selected_date|date:"l, F j, Y" }}
+                    </h3>
                 </div>
                 <div class="card-body">
                     {% if productivity %}
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <div class="score-display text-center">
-                                <h1 class="display-4 fw-bold" style="color: var(--turquoise-blue);">{{ productivity.score }}</h1>
-                                <p class="text-muted">out of 100</p>
+                    <div class="row align-items-center">
+                        <div class="col-md-4 text-center">
+                            <div class="score-circle mx-auto">
+                                <div class="score-value">{{ productivity.score }}</div>
+                                <div class="score-label">out of 100</div>
                             </div>
                         </div>
                         <div class="col-md-8">
                             {% if productivity.reflection %}
-                            <h5 class="mb-3">Your Reflection:</h5>
-                            <div class="reflection-content p-3 rounded" style="background-color: rgba(77, 208, 225, 0.1);">
-                                {{ productivity.reflection|linebreaksbr }}
+                            <div class="reflection-box">
+                                <h5 class="d-flex align-items-center">
+                                    <i class="fas fa-comment-alt me-2"></i>Your Reflection
+                                </h5>
+                                <div class="reflection-content">
+                                    {{ productivity.reflection|linebreaksbr }}
+                                </div>
                             </div>
                             {% endif %}
                         </div>
                     </div>
-                    <div class="text-end">
-                        <a href="{% url 'tracker:productivity_score' %}?date={{ selected_date|date:'Y-m-d' }}#editScore" class="btn btn-sm btn-outline-primary">
+                    <div class="text-end mt-3">
+                        <a href="{% url 'tracker:productivity_score' %}?date={{ selected_date|date:'Y-m-d' }}#editScore" 
+                           class="btn btn-sm btn-outline-primary">
                             <i class="fas fa-edit me-1"></i> Edit Score
                         </a>
                     </div>
                     {% else %}
                     <div class="text-center py-4">
                         <i class="fas fa-chart-line fa-3x mb-3 text-muted"></i>
-                        <p>No productivity score recorded for this date. Scroll down to add one.</p>
+                        <p class="text-muted">No productivity score recorded for this date</p>
+                        <a href="#editScore" class="btn btn-primary mt-2">
+                            <i class="fas fa-plus-circle me-1"></i> Add Score
+                        </a>
                     </div>
                     {% endif %}
                 </div>
             </div>
             
+            <!-- Edit/Add Score Form -->
             <div class="card" id="editScore">
-                <div class="card-header bg-transparent">
-                    <h3 class="mb-0">{% if productivity %}Edit{% else %}Add{% endif %} Productivity Score</h3>
+                <div class="card-header">
+                    <h3 class="mb-0">
+                        <i class="fas fa-edit me-2"></i>
+                        {% if productivity %}Edit{% else %}Add{% endif %} Productivity Score
+                    </h3>
                 </div>
                 <div class="card-body">
                     <form method="post">
                         {% csrf_token %}
+                        <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
                         
-                        {% for field in form %}
-                        <div class="mb-3">
-                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-                            {{ field }}
-                            {% if field.help_text %}
-                            <div class="form-text">{{ field.help_text }}</div>
-                            {% endif %}
-                            {% if field.errors %}
-                            <div class="text-danger small mt-1">
-                                {{ field.errors }}
+                        <!-- Score Field -->
+                        <div class="mb-4">
+                            <label for="{{ form.score.id_for_label }}" class="form-label">
+                                <i class="fas fa-star me-2"></i>{{ form.score.label }}
+                            </label>
+                            <div class="d-flex align-items-center">
+                                <input type="range" class="form-range flex-grow-1 me-3" 
+                                       id="{{ form.score.id_for_label }}" 
+                                       name="{{ form.score.name }}" 
+                                       min="0" max="100" value="{{ form.score.value|default:50 }}">
+                                <span class="score-preview" style="min-width: 50px;">{{ form.score.value|default:50 }}</span>
                             </div>
+                            {% if form.score.help_text %}
+                            <div class="form-text">{{ form.score.help_text }}</div>
                             {% endif %}
                         </div>
-                        {% endfor %}
+                        
+                        <!-- Reflection Field -->
+                        <div class="mb-4">
+                            <label for="{{ form.reflection.id_for_label }}" class="form-label">
+                                <i class="fas fa-comment-alt me-2"></i>{{ form.reflection.label }}
+                            </label>
+                            <textarea class="form-control" id="{{ form.reflection.id_for_label }}" 
+                                      name="{{ form.reflection.name }}" rows="5">{{ form.reflection.value|default:'' }}</textarea>
+                        </div>
                         
                         <div class="d-flex justify-content-end mt-4">
-                            <a href="{% url 'tracker:productivity_score' %}?date={{ selected_date|date:'Y-m-d' }}" class="btn btn-outline-secondary me-2">
+                            <a href="{% url 'tracker:productivity_score' %}?date={{ selected_date|date:'Y-m-d' }}" 
+                               class="btn btn-outline-secondary me-2">
                                 <i class="fas fa-times me-1"></i> Cancel
                             </a>
                             <button type="submit" class="btn btn-primary">
@@ -106,60 +137,95 @@
 
 {% block extra_css %}
 <style>
-    .score-display {
-        padding: 20px;
-        border-radius: 8px;
+    .score-circle {
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--turquoise-blue), var(--tropical-green));
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        box-shadow: 0 4px 15px rgba(77, 208, 225, 0.3);
+    }
+    
+    .score-value {
+        font-size: 3.5rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+    
+    .score-label {
+        font-size: 1rem;
+        opacity: 0.9;
+    }
+    
+    .reflection-box {
         background-color: rgba(77, 208, 225, 0.05);
-        border: 1px solid rgba(77, 208, 225, 0.2);
-    }
-    
-    /* Style form elements to match our theme */
-    textarea.form-control {
-        min-height: 120px;
-    }
-    
-    /* Custom range input styling for score slider */
-    input[type=range] {
-        height: 25px;
-        -webkit-appearance: none;
-        margin: 10px 0;
-        width: 100%;
-        background: transparent;
-    }
-    
-    input[type=range]:focus {
-        outline: none;
-    }
-    
-    input[type=range]::-webkit-slider-runnable-track {
-        width: 100%;
-        height: 10px;
-        cursor: pointer;
-        animate: 0.2s;
-        box-shadow: 0px 0px 0px #000000;
-        background: var(--card-bg);
-        border-radius: 5px;
-        border: 1px solid var(--border-color);
-    }
-    
-    input[type=range]::-webkit-slider-thumb {
-        box-shadow: 1px 1px 1px #000000;
-        border: 1px solid #000000;
-        height: 18px;
-        width: 18px;
-        border-radius: 9px;
-        background: var(--turquoise-blue);
-        cursor: pointer;
-        -webkit-appearance: none;
-        margin-top: -5px;
-    }
-    
-    input[type=range]:focus::-webkit-slider-runnable-track {
-        background: var(--card-bg);
+        border-radius: 8px;
+        padding: 1.5rem;
+        border-left: 4px solid var(--turquoise-blue);
     }
     
     .reflection-content {
-        border-left: 3px solid var(--turquoise-blue);
+        font-size: 1rem;
+        line-height: 1.6;
+    }
+    
+    /* Custom range slider */
+    .form-range {
+        height: 8px;
+        cursor: pointer;
+    }
+    
+    .form-range::-webkit-slider-thumb {
+        width: 20px;
+        height: 20px;
+        margin-top: -6px;
+        background-color: var(--turquoise-blue);
+        border: none;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    
+    .form-range::-webkit-slider-runnable-track {
+        height: 8px;
+        background: #e9ecef;
+        border-radius: 4px;
+    }
+    
+    .score-preview {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--turquoise-blue);
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .score-circle {
+            width: 140px;
+            height: 140px;
+            margin-bottom: 1.5rem;
+        }
+        .score-value {
+            font-size: 2.5rem;
+        }
     }
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Update score preview when slider moves
+    const scoreSlider = document.querySelector('input[type="range"]');
+    const scorePreview = document.querySelector('.score-preview');
+    
+    if (scoreSlider && scorePreview) {
+        scoreSlider.addEventListener('input', function() {
+            scorePreview.textContent = this.value;
+        });
+    }
+});
+</script>
 {% endblock %}

@@ -1,48 +1,85 @@
 {% extends 'tracker/base.html' %}
-{% block title %}Edit Activity: {{ activity.name }} | Productivity Tracker{% endblock %}
+{% block title %}Edit Activity: {{ activity.name }} | Shajara{% endblock %}
+
 {% block content %}
-<div class="container mt-5" style="background-color: #F8F9FA; padding: 30px; border-radius: 8px;">
-    <h1 class="mb-4" style="color: #F06905;">Edit Activity: {{ activity.name }}</h1>
-    <div class="card" style="border: 1px solid #638D13; border-radius: 8px;">
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="mb-0">Edit Activity: {{ activity.name }}</h2>
+        </div>
         <div class="card-body">
             <form method="post">
                 {% csrf_token %}
                 {% for field in form %}
                     <div class="mb-3">
-                        <label for="{{ field.id_for_label }}" class="form-label" style="color: #0A3226; font-weight: bold;">{{ field.label }}</label>
-                        {{ field }}
+                        <label for="{{ field.id_for_label }}" class="form-label">
+                            <i class="fas fa-{% if field.name == 'start_time' or field.name == 'end_time' %}clock{% elif field.name == 'date' %}calendar-alt{% elif field.name == 'category' %}tag{% else %}edit{% endif %} me-2"></i>
+                            {{ field.label }}
+                        </label>
+                        
+                        {% if field.field.widget.input_type in 'datetime,datetime-local,date,time' %}
+                        <div class="input-group">
+                            {{ field }}
+                            <span class="input-group-text bg-white">
+                                <i class="fas fa-{% if field.field.widget.input_type == 'time' %}clock{% else %}calendar-alt{% endif %} text-secondary"></i>
+                            </span>
+                        </div>
+                        {% else %}
+                            {{ field }}
+                        {% endif %}
+                        
                         {% if field.errors %}
-                            <div class="alert alert-danger mt-2">{{ field.errors }}</div>
+                            <div class="alert alert-danger mt-2">
+                                <i class="fas fa-exclamation-circle me-2"></i>{{ field.errors }}
+                            </div>
                         {% endif %}
                         {% if field.help_text %}
-                            <small class="form-text text-muted">{{ field.help_text }}</small>
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle me-2"></i>{{ field.help_text }}
+                            </small>
                         {% endif %}
                     </div>
                 {% endfor %}
-                <button type="submit" class="btn btn-primary" style="background-color: #FEB909; color: #212529; border: none;">Save Changes</button>
-                <a href="{% url 'tracker:activity_log' %}" class="btn btn-secondary ms-2">Cancel</a>
-                <button type="button" class="btn btn-danger ms-2" data-bs-toggle="modal" data-bs-target="#deleteActivityModal" style="background-color: #F06905; border: none;">Delete Activity</button>
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Save Changes
+                    </button>
+                    <a href="{% url 'tracker:activity_log' %}" class="btn btn-outline-secondary ms-2">
+                        <i class="fas fa-times-circle me-2"></i>Cancel
+                    </a>
+                    <button type="button" class="btn btn-outline-danger ms-2" data-bs-toggle="modal" data-bs-target="#deleteActivityModal">
+                        <i class="fas fa-trash-alt me-2"></i>Delete Activity
+                    </button>
+                </div>
             </form>
         </div>
     </div>
+</div>
 
-    <div class="modal fade" id="deleteActivityModal" tabindex="-1" aria-labelledby="deleteActivityModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header" style="background-color: #F06905; color: white;">
-                    <h5 class="modal-title" id="deleteActivityModalLabel">Confirm Delete</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    Are you sure you want to delete the activity "{{ activity.name }}"? This action cannot be undone.
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <form method="post" action="{% url 'tracker:delete_activity' activity.id %}" class="d-inline">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-danger" style="background-color: #F06905; border: none;">Delete</button>
-                    </form>
-                </div>
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteActivityModal" tabindex="-1" aria-labelledby="deleteActivityModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteActivityModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2 text-danger"></i>Confirm Delete
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the activity <strong>"{{ activity.name }}"</strong>?</p>
+                <p class="text-danger"><i class="fas fa-exclamation-circle me-2"></i>This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </button>
+                <form method="post" action="{% url 'tracker:delete_activity' activity.id %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash-alt me-2"></i>Delete
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -51,21 +88,61 @@
 
 {% block extra_css %}
 <style>
-    body {
-        background-color: #034E64; /* Themed background */
-        color: #343a40; /* Default text color */
+    .card {
+        border-left: 4px solid var(--turquoise-blue);
     }
+    
     .form-control {
-        border: 1px solid #638D13;
+        border: 1px solid var(--turquoise-blue);
+        padding: 10px 15px;
     }
+    
     .form-control:focus {
-        border-color: #FEB909;
-        box-shadow: 0 0 0 0.2rem rgba(254, 185, 9, 0.25);
+        border-color: var(--tropical-green);
+        box-shadow: 0 0 0 0.2rem rgba(10, 50, 38, 0.1);
     }
+    
     .alert-danger {
-        background-color: #ffe0b2; /* Light orange for errors */
+        background-color: #ffe0b2;
         border-color: #ffb300;
         color: #614a19;
+        padding: 10px 15px;
+        border-radius: 4px;
+    }
+    
+    .input-group-text {
+        border-left: none;
+        background-color: white;
+    }
+    
+    input[type="date"],
+    input[type="time"],
+    input[type="datetime-local"] {
+        border-right: none;
+    }
+    
+    input[type="date"]:focus,
+    input[type="time"]:focus,
+    input[type="datetime-local"]:focus {
+        box-shadow: none;
+    }
+    
+    input[type="date"]:focus + .input-group-text,
+    input[type="time"]:focus + .input-group-text,
+    input[type="datetime-local"]:focus + .input-group-text {
+        border-color: var(--tropical-green);
+    }
+    
+    .form-label i {
+        color: var(--tropical-green);
+    }
+    
+    .modal-header {
+        border-bottom: 2px solid var(--turquoise-blue);
+    }
+    
+    .modal-footer {
+        border-top: 2px solid var(--turquoise-blue);
     }
 </style>
 {% endblock %}

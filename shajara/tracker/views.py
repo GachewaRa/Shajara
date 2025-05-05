@@ -167,39 +167,25 @@ def add_task(request):
     }
     return render(request, 'tracker/add_task.html', context)
 
-# @login_required
-# def edit_task(request, pk):
-#     task = get_object_or_404(Task, pk=pk, user=request.user)
-    
-#     if request.method == 'POST':
-#         form = TaskForm(request.POST, instance=task)
-#         if form.is_valid():
-#             form.save()
-#             messages.success(request, 'Task updated successfully!')
-            
-#             # Redirect based on where the task was edited from
-#             next_url = request.POST.get('next', 'tracker:task_list')
-#             return redirect(next_url)
-#     else:
-#         form = TaskForm(instance=task)
-    
-#     return render(request, 'tracker/edit_task.html', {'form': form, 'task': task})
 
 @login_required
 def edit_task(request, pk):
     task = get_object_or_404(Task, pk=pk, user=request.user)
+    next_url = request.POST.get('next')
 
     if request.method == 'POST':
-        form = TaskForm(request.POST, instance=task)  # Pass the instance here for saving
+        form = TaskForm(request.POST, instance=task)
         if form.is_valid():
             form.save()
             messages.success(request, 'Task updated successfully!')
 
-            # Redirect based on where the task was edited from
-            next_url = request.POST.get('next', reverse('tracker:task_list'))
-            return redirect(next_url)
+            # Ensure next_url has a value before redirecting
+            if next_url:
+                return redirect(next_url)
+            else:
+                return redirect(reverse('tracker:task_list'))
     else:
-        form = TaskForm(instance=task)  # Pass the instance here for displaying the form
+        form = TaskForm(instance=task)
 
     context = {
         'form': form,
@@ -209,35 +195,27 @@ def edit_task(request, pk):
 
 from django.http import JsonResponse
 
-@login_required
-def complete_task_ajax(request):
-    if request.method == 'POST' and request.is_ajax():
-        task_id = request.POST.get('task_id')
-        try:
-            task = Task.objects.get(pk=task_id, user=request.user)
-            task.status = 'C'
-            task.save()
-            return JsonResponse({'status': 'success', 'message': 'Task marked as complete.'})
-        except Task.DoesNotExist:
-            return JsonResponse({'status': 'error', 'message': 'Task not found.'}, status=404)
-        except Exception as e:
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-    return JsonResponse({'status': 'error', 'message': 'Invalid request.'}, status=400)
+
 
 @login_required
-def delete_task_ajax(request):
-    if request.method == 'POST' and request.is_ajax():
-        task_id = request.POST.get('task_id')
-        try:
-            task = Task.objects.get(pk=task_id, user=request.user)
-            task.status = 'D'  # Or task.delete() if you want to fully delete
-            task.save()
-            return JsonResponse({'status': 'success', 'message': 'Task deleted successfully.'})
-        except Task.DoesNotExist:
-            return JsonResponse({'status': 'error', 'message': 'Task not found.'}, status=404)
-        except Exception as e:
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-    return JsonResponse({'status': 'error', 'message': 'Invalid request.'}, status=400)
+def toggle_task_status(request, pk):
+    task = get_object_or_404(Task, pk=pk, user=request.user)
+    
+    if request.method == 'POST':
+        if task.status == 'C':
+            task.status = 'IP'
+            task.completed_at = None  # Clear completion time when reopening
+        else:
+            task.status = 'C'
+            task.completed_at = timezone.now()  # Set completion time
+        task.save()
+        
+        messages.success(request, f'Task marked as {task.get_status_display()}')
+        return redirect(request.POST.get('next', 'tracker:task_list'))
+    
+    return redirect('tracker:task_list')
+
+
 
 @login_required
 def delete_task(request, pk):
@@ -265,33 +243,6 @@ def activity_log(request):
             filter_date = timezone.now().date()
     
     # Get activities for the selected date
-    # activities = Activity.objects.filter(
-    #     user=request.user,
-    #     date=filter_date
-    # ).order_by('start_time')
-    
-    # # Calculate total time spent
-    # total_minutes = activities.aggregate(total=Sum('duration_minutes'))['total'] or 0
-    # hours = total_minutes // 60
-    # minutes = total_minutes % 60
-    
-    # # Group activities by category for visualization
-    # categories = Activity.objects.filter(
-    #     user=request.user,
-    #     date=filter_date
-    # ).values('category').annotate(
-    #     total_time=Sum('duration_minutes')
-    # ).order_by('-total_time')
-    
-    # context = {
-    #     'activities': activities,
-    #     'filter_date': filter_date,
-    #     'total_hours': hours,
-    #     'total_minutes': minutes,
-    #     'categories': categories,
-    # }
-    
-    # return render(request, 'tracker/activity_log.html', context)
     activities = Activity.objects.filter(
         user=request.user,
         date=filter_date
@@ -368,33 +319,6 @@ def delete_activity(request, pk):
     
     return render(request, 'tracker/delete_activity.html', {'activity': activity})
 
-# @login_required
-# def daily_plan(request):
-#     # Get today's date
-#     today = timezone.now().date()
-    
-#     # Check if a plan exists for today
-#     plan = DailyPlan.objects.filter(user=request.user, date=today).first()
-    
-#     if request.method == 'POST':
-#         form = DailyPlanForm(request.POST, instance=plan, user=request.user)
-#         if form.is_valid():
-#             daily_plan = form.save(commit=False)
-#             daily_plan.user = request.user
-#             daily_plan.save()
-#             form.save_m2m()  # Save many-to-many relationships
-#             messages.success(request, 'Daily plan updated successfully!')
-#             return redirect('tracker:daily_plan')
-#     else:
-#         form = DailyPlanForm(instance=plan, user=request.user, initial={'date': today})
-    
-#     context = {
-#         'form': form,
-#         'today': today,
-#     }
-    
-#     return render(request, 'tracker/daily_plan.html', context)
-
 @login_required
 def daily_plan(request):
     # Get today's date
@@ -422,37 +346,7 @@ def daily_plan(request):
 
     return render(request, 'tracker/daily_plan.html', context)
 
-# @login_required
-# def daily_plan_detail(request, date):
-#     # Parse the date
-#     try:
-#         plan_date = datetime.strptime(date, '%Y-%m-%d').date()
-#     except ValueError:
-#         messages.error(request, 'Invalid date format')
-#         return redirect('tracker:daily_plan')
-    
-#     # Get the plan for the specified date
-#     plan = get_object_or_404(DailyPlan, user=request.user, date=plan_date)
-    
-#     # Get activities for that day
-#     activities = Activity.objects.filter(
-#         user=request.user,
-#         date=plan_date
-#     ).order_by('start_time')
-    
-#     # Get productivity score if exists
-#     productivity = ProductivityScore.objects.filter(
-#         user=request.user,
-#         date=plan_date
-#     ).first()
-    
-#     context = {
-#         'plan': plan,
-#         'activities': activities,
-#         'productivity': productivity,
-#     }
-    
-#     return render(request, 'tracker/daily_plan_detail.html', context)
+
 
 @login_required
 def daily_plan_detail(request, date=None):
@@ -560,30 +454,6 @@ def productivity_score(request):
     
     return render(request, 'tracker/productivity_score.html', context)
 
-# @login_required
-# def learning_journal(request):
-#     # Get entries, ordered by most recent first
-#     entries = LearningEntry.objects.filter(user=request.user).order_by('-date')
-    
-#     # Filter by tag if provided
-#     tag_filter = request.GET.get('tag')
-#     if tag_filter:
-#         entries = entries.filter(tags__icontains=tag_filter)
-    
-#     # Get all unique tags for the filter dropdown
-#     all_tags = set()
-#     for entry in LearningEntry.objects.filter(user=request.user):
-#         if entry.tags:
-#             entry_tags = [tag.strip() for tag in entry.tags.split(',')]
-#             all_tags.update(entry_tags)
-    
-#     context = {
-#         'entries': entries,
-#         'all_tags': sorted(all_tags),
-#         'selected_tag': tag_filter,
-#     }
-    
-#     return render(request, 'tracker/learning_journal.html', context)
 
 @login_required
 def learning_journal(request):
