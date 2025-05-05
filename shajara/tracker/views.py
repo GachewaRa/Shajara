@@ -41,19 +41,85 @@ def logout_view(request):
     logout(request)
     return redirect('tracker:login')
 
+# @login_required
+# def dashboard(request):
+#     # Get today's date
+#     today = timezone.now().date()
+
+#     # Get tasks for today
+#     today_tasks = Task.objects.filter(
+#         user=request.user,
+#         deadline__date=today,
+#         status__in=['P', 'IP']  # Pending or In Progress
+#     ).order_by('deadline')  # Order by closest deadline first
+
+#     # Get recent activities
+#     recent_activities = Activity.objects.filter(
+#         user=request.user
+#     ).order_by('-date', '-start_time')[:5]
+
+#     # Get productivity scores for the last 7 days
+#     last_week = today - timedelta(days=7)
+#     productivity_scores = ProductivityScore.objects.filter(
+#         user=request.user,
+#         date__gte=last_week
+#     ).order_by('date')
+
+#     # Get recent learning entries
+#     recent_learning = LearningEntry.objects.filter(
+#         user=request.user
+#     ).order_by('-date')[:3]
+
+#     # Calculate time spent today
+#     total_minutes = Activity.objects.filter(
+#         user=request.user,
+#         date=today
+#     ).aggregate(total_minutes=Sum('duration_minutes'))['total_minutes'] or 0
+
+#     hours = total_minutes // 60
+#     remaining_minutes = total_minutes % 60
+
+#     # Get tasks by quadrant for quick access to Eisenhower Matrix
+#     tasks_by_quadrant = {
+#         'IU': Task.objects.filter(user=request.user, quadrant='IU', status__in=['P', 'IP']).count(),
+#         'IN': Task.objects.filter(user=request.user, quadrant='IN', status__in=['P', 'IP']).count(),
+#         'NI': Task.objects.filter(user=request.user, quadrant='NI', status__in=['P', 'IP']).count(),
+#         'NN': Task.objects.filter(user=request.user, quadrant='NN', status__in=['P', 'IP']).count(),
+#     }
+
+#     context = {
+#         'today_tasks': today_tasks,
+#         'recent_activities': recent_activities,
+#         'productivity_scores': productivity_scores,
+#         'recent_learning': recent_learning,
+#         'today_time': total_minutes,  # Keep the total minutes if you need it elsewhere
+#         'today_hours': hours,
+#         'today_remaining_minutes': remaining_minutes,
+#         'tasks_by_quadrant': tasks_by_quadrant,
+#     }
+
+#     return render(request, 'tracker/dashboard.html', context)
+
 @login_required
 def dashboard(request):
-    # Get today's date
+    # Get timezone-aware today's date
     today = timezone.now().date()
+    today_start = timezone.make_aware(datetime.combine(today, datetime.min.time()))
+    today_end = timezone.make_aware(datetime.combine(today, datetime.max.time()))
 
-    # Get tasks for today
-    daily_plan = DailyPlan.objects.filter(user=request.user, date=today).first()
-    if daily_plan:
-        today_tasks = daily_plan.tasks.all()
-    else:
-        today_tasks = []
+    today_tasks = Task.objects.filter(
+        user=request.user,
+        status__in=['P', 'IP']
+    ).exclude(
+        deadline__isnull=True
+    ).order_by('deadline')[:10] 
 
-    # Get recent activities
+    # Debugging - print the tasks being fetched
+    print(f"Found {today_tasks.count()} tasks for today:")
+    for task in today_tasks:
+        print(f"- {task.title} (Due: {task.deadline})")
+
+    # Rest of your view remains the same...
     recent_activities = Activity.objects.filter(
         user=request.user
     ).order_by('-date', '-start_time')[:5]
@@ -64,11 +130,6 @@ def dashboard(request):
         user=request.user,
         date__gte=last_week
     ).order_by('date')
-
-    # Get recent learning entries
-    recent_learning = LearningEntry.objects.filter(
-        user=request.user
-    ).order_by('-date')[:3]
 
     # Calculate time spent today
     total_minutes = Activity.objects.filter(
@@ -91,11 +152,13 @@ def dashboard(request):
         'today_tasks': today_tasks,
         'recent_activities': recent_activities,
         'productivity_scores': productivity_scores,
-        'recent_learning': recent_learning,
-        'today_time': total_minutes,  # Keep the total minutes if you need it elsewhere
+        'today_time': total_minutes,
         'today_hours': hours,
         'today_remaining_minutes': remaining_minutes,
         'tasks_by_quadrant': tasks_by_quadrant,
+        'recent_learning': LearningEntry.objects.filter(
+            user=request.user
+        ).order_by('-date')[:3],
     }
 
     return render(request, 'tracker/dashboard.html', context)
@@ -442,6 +505,11 @@ def productivity_score(request):
         date__gte=last_week,
         date__lt=today
     ).order_by('date')
+
+    recent_scores = ProductivityScore.objects.filter(
+        user=request.user,
+        date__lte=timezone.now().date()
+    ).order_by('-date')[:7]
     
     context = {
         'form': form,
@@ -450,6 +518,7 @@ def productivity_score(request):
         'completed_tasks': completed_tasks,
         'planned_tasks': planned_tasks,
         'previous_scores': previous_scores,
+        'recent_scores': recent_scores,
     }
     
     return render(request, 'tracker/productivity_score.html', context)

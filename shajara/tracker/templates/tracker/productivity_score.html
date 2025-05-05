@@ -32,6 +32,46 @@
                 </div>
             </div>
 
+            <!-- Recent Scores Panel -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="mb-0"><i class="fas fa-history me-2"></i>Recent Scores</h3>
+                </div>
+                <div class="card-body">
+                    {% if recent_scores %}
+                        <div class="recent-scores">
+                            {% for score in recent_scores %}
+                                <div class="recent-score-item {% if score.date == selected_date %}current-day{% endif %}">
+                                    <div class="recent-score-date">
+                                        {{ score.date|date:"D, M j" }}
+                                        {% if score.date == timezone.now.date %}<span class="badge bg-primary ms-2">Today</span>{% endif %}
+                                    </div>
+                                    <div class="recent-score-value">
+                                        <span class="score-number">{{ score.score }}</span>
+                                        <small>/100</small>
+                                    </div>
+                                    {% if score.reflection %}
+                                    <div class="recent-score-reflection">
+                                        <i class="fas fa-comment-alt me-2"></i>
+                                        {{ score.reflection|truncatechars:50 }}
+                                    </div>
+                                    {% endif %}
+                                    <a href="{% url 'tracker:productivity_score' %}?date={{ score.date|date:'Y-m-d' }}" 
+                                    class="recent-score-link">
+                                        <i class="fas fa-arrow-right"></i>
+                                    </a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="fas fa-chart-line fa-2x text-muted mb-2"></i>
+                            <p class="text-muted">No recent scores recorded</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
             <!-- Score Display -->
             <div class="card mb-4">
                 <div class="card-header">
@@ -198,6 +238,77 @@
         font-size: 1.2rem;
         font-weight: 600;
         color: var(--turquoise-blue);
+    }
+
+
+
+
+    .recent-scores {
+        display: grid;
+        gap: 10px;
+    }
+
+    .recent-score-item {
+        position: relative;
+        padding: 15px;
+        border-radius: 8px;
+        background-color: white;
+        border-left: 4px solid var(--turquoise-blue);
+        transition: all 0.2s ease;
+    }
+
+    .recent-score-item.current-day {
+        background-color: rgba(77, 208, 225, 0.1);
+        border-left: 4px solid var(--tropical-green);
+    }
+
+    .recent-score-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+
+    .recent-score-date {
+        font-weight: 500;
+        color: var(--dark-text-color);
+        margin-bottom: 5px;
+    }
+
+    .recent-score-value {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--tropical-green);
+        margin-bottom: 8px;
+    }
+
+    .recent-score-value .score-number {
+        font-size: 1.5rem;
+    }
+
+    .recent-score-reflection {
+        font-size: 0.9rem;
+        color: var(--dark-text-color);
+        opacity: 0.8;
+        margin-bottom: 5px;
+    }
+
+    .recent-score-link {
+        position: absolute;
+        right: 15px;
+        top: 15px;
+        color: var(--turquoise-blue);
+        opacity: 0.5;
+        transition: all 0.2s ease;
+    }
+
+    .recent-score-item:hover .recent-score-link {
+        opacity: 1;
+        transform: translateX(3px);
+    }
+
+    @media (max-width: 768px) {
+        .recent-scores {
+            grid-template-columns: 1fr;
+        }
     }
     
     /* Responsive adjustments */

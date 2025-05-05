@@ -1,256 +1,421 @@
-<!-- tracker/templates/tracker/dashboard.html -->
 {% extends 'tracker/base.html' %}
-{% block title %}Dashboard | Productivity Tracker{% endblock %}
+{% block title %}Dashboard | Shajara{% endblock %}
+
 {% block content %}
-<h1 class="mb-4">Dashboard</h1>
-<div class="row">
-    <!-- Today's Tasks Overview -->
-    <div class="col-md-6">
-        <div class="card dashboard-card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Today's Tasks</h5>
-                <a href="{% url 'tracker:daily_plan' %}" class="btn btn-sm btn-primary">
-                    <i class="fas fa-edit"></i> Plan
-                </a>
-            </div>
-            <div class="card-body">
-                {% if today_tasks %}
-                    <ul class="list-group">
-                        {% for task in today_tasks %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <div>
-                                    {% if task.status == 'C' %}
-                                        <i class="fas fa-check-circle text-success me-2"></i>
-                                        <span class="text-decoration-line-through">{{ task.title }}</span>
-                                    {% else %}
-                                        <i class="far fa-circle me-2"></i>
-                                        <span>{{ task.title }}</span>
-                                    {% endif %}
-                                </div>
-                                <span class="badge bg-primary rounded-pill">
-                                    {{ task.get_quadrant_display }}
-                                </span>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                {% else %}
-                    <p class="text-muted">No tasks planned for today. 
-                        <a href="{% url 'tracker:daily_plan' %}">Plan your day now</a>
-                    </p>
-                {% endif %}
-            </div>
+<div class="container">
+    <div class="card mb-4">
+        <div class="card-header">
+            <h2 class="mb-0">Dashboard Overview</h2>
         </div>
     </div>
-    <!-- Eisenhower Matrix Overview -->
-    <div class="col-md-6">
-        <div class="card dashboard-card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Eisenhower Matrix</h5>
-                <a href="{% url 'tracker:eisenhower_matrix' %}" class="btn btn-sm btn-primary">
-                    <i class="fas fa-th-large"></i> Full Matrix
-                </a>
+
+    <div class="row">
+        <!-- Today's Tasks Overview -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0"><i class="fas fa-tasks me-2"></i>Today's Tasks</h3>
+                    <a href="{% url 'tracker:add_task' %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-1"></i>Add Task
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if today_tasks %}
+                        <div class="list-group">
+                            {% for task in today_tasks|dictsort:"deadline" %}
+                                <div class="list-group-item {% if task.status == 'C' %}completed-task{% endif %}">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            {% if task.status == 'C' %}
+                                                <i class="fas fa-check-circle text-success me-2"></i>
+                                                <span class="text-decoration-line-through">{{ task.title }}</span>
+                                            {% else %}
+                                                <i class="far fa-circle me-2"></i>
+                                                <span>{{ task.title }}</span>
+                                            {% endif %}
+                                            {% if task.deadline %}
+                                                <small class="text-muted ms-2">
+                                                    <i class="fas fa-clock me-1"></i>{{ task.deadline|time:"H:i" }}
+                                                </small>
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            <span class="badge me-2 quadrant-badge quadrant-{{ task.quadrant }}">
+                                                {{ task.get_quadrant_display }}
+                                            </span>
+                                            <a href="{% url 'tracker:edit_task' task.id %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No tasks planned for today</p>
+                            <a href="{% url 'tracker:add_task' %}" class="btn btn-primary mt-2">
+                                <i class="fas fa-plus me-1"></i>Add Your First Task
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-6 text-center mb-3">
-                        <div class="p-3 bg-danger text-white rounded">
-                            <h6>Important & Urgent</h6>
-                            <h3>{{ tasks_by_quadrant.IU }}</h3>
+        </div>
+
+        <!-- Eisenhower Matrix Overview -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0"><i class="fas fa-th-large me-2"></i>Eisenhower Matrix</h3>
+                    <a href="{% url 'tracker:eisenhower_matrix' %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-external-link-alt me-1"></i>Full View
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <div class="quadrant-card quadrant-iu p-3 rounded">
+                                <h5>Important & Urgent</h5>
+                                <h2 class="text-center">{{ tasks_by_quadrant.IU }}</h2>
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-6 text-center mb-3">
-                        <div class="p-3 bg-warning text-dark rounded">
-                            <h6>Important & Not Urgent</h6>
-                            <h3>{{ tasks_by_quadrant.IN }}</h3>
+                        <div class="col-md-6">
+                            <div class="quadrant-card quadrant-in p-3 rounded">
+                                <h5>Important & Not Urgent</h5>
+                                <h2 class="text-center">{{ tasks_by_quadrant.IN }}</h2>
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-6 text-center">
-                        <div class="p-3 bg-info text-white rounded">
-                            <h6>Not Important & Urgent</h6>
-                            <h3>{{ tasks_by_quadrant.NI }}</h3>
+                        <div class="col-md-6">
+                            <div class="quadrant-card quadrant-ni p-3 rounded">
+                                <h5>Not Important & Urgent</h5>
+                                <h2 class="text-center">{{ tasks_by_quadrant.NI }}</h2>
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-6 text-center">
-                        <div class="p-3 bg-secondary text-white rounded">
-                            <h6>Not Important & Not Urgent</h6>
-                            <h3>{{ tasks_by_quadrant.NN }}</h3>
+                        <div class="col-md-6">
+                            <div class="quadrant-card quadrant-nn p-3 rounded">
+                                <h5>Not Important & Not Urgent</h5>
+                                <h2 class="text-center">{{ tasks_by_quadrant.NN }}</h2>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<div class="row mt-4">
-    <!-- Recent Activities -->
-    <div class="col-md-6">
-        <div class="card dashboard-card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Recent Activities</h5>
-                <a href="{% url 'tracker:activity_log' %}" class="btn btn-sm btn-primary">
-                    <i class="fas fa-clock"></i> All Activities
-                </a>
+    <div class="row mt-4">
+        <!-- Recent Activities -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0"><i class="fas fa-clock me-2"></i>Recent Activities</h3>
+                    <a href="{% url 'tracker:activity_log' %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-list me-1"></i>View All
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if recent_activities %}
+                        <div class="alert alert-info mb-3">
+                            <i class="fas fa-chart-pie me-2"></i>
+                            <strong>Today's Total:</strong> {{ today_hours }}h 
+                            {% if today_remaining_minutes > 0 %}{{ today_remaining_minutes }}m{% endif %}
+                        </div>
+                        <div class="activity-timeline">
+                            {% for activity in recent_activities %}
+                                <div class="activity-item">
+                                    <div class="activity-time">
+                                        {{ activity.start_time|time:"H:i" }} - {{ activity.end_time|time:"H:i" }}
+                                    </div>
+                                    <div class="activity-dot"></div>
+                                    <div class="activity-content">
+                                        <div class="d-flex justify-content-between">
+                                            <strong>{{ activity.name }}</strong>
+                                            <span class="badge bg-secondary">
+                                                {{ activity.duration_minutes }}m
+                                            </span>
+                                        </div>
+                                        <small class="text-muted">{{ activity.get_category_display }}</small>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-clock fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No activities tracked today</p>
+                            <a href="{% url 'tracker:add_activity' %}" class="btn btn-primary mt-2">
+                                <i class="fas fa-plus me-1"></i>Log Activity
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
-            <div class="card-body">
-                {% if recent_activities %}
-                    <div class="mb-3">
-                        <p class="mb-0">Time spent today: 
-                            <strong>{{ today_time|floatformat:0 }} minutes</strong>
-                            ({{ today_hours }} hours {% if today_remaining_minutes > 0 %}{{ today_remaining_minutes }} minutes{% endif %})
-                        </p>
-                    </div>
-                    <ul class="list-group">
-                        {% for activity in recent_activities %}
-                            <li class="list-group-item activity-item activity-category-{{ activity.category }}">
-                                <div class="d-flex justify-content-between">
-                                    <span><strong>{{ activity.name }}</strong></span>
-                                    <span class="badge bg-secondary">{{ activity.duration_minutes }} mins</span>
-                                </div>
-                                <div class="text-muted small">
-                                    {{ activity.start_time|time:"H:i" }} - {{ activity.end_time|time:"H:i" }} | 
-                                    {{ activity.get_category_display }}
-                                </div>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                {% else %}
-                    <p class="text-muted">No recent activities tracked.
-                        <a href="{% url 'tracker:add_activity' %}">Log an activity now</a>
-                    </p>
-                {% endif %}
+        </div>
+        
+        <!-- Productivity Score -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0"><i class="fas fa-chart-line me-2"></i>Productivity</h3>
+                    <a href="{% url 'tracker:productivity_score' %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-1"></i>Add Score
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if productivity_scores %}
+                        <canvas id="productivityChart" height="200"></canvas>
+                        <div class="text-center mt-3">
+                            <small class="text-muted">
+                                Last 7 days average: {{ avg_productivity|floatformat:1 }}/100
+                            </small>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No productivity scores recorded</p>
+                            <a href="{% url 'tracker:productivity_score' %}" class="btn btn-primary mt-2">
+                                <i class="fas fa-plus me-1"></i>Add First Score
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
-    
-    <!-- Productivity Score -->
-    <div class="col-md-6">
-        <div class="card dashboard-card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Productivity Scores</h5>
-                <a href="{% url 'tracker:productivity_score' %}" class="btn btn-sm btn-primary">
-                    <i class="fas fa-chart-line"></i> Score Today
-                </a>
-            </div>
-            <div class="card-body">
-                {% if productivity_scores %}
-                    <canvas id="productivityChart" height="200"></canvas>
-                {% else %}
-                    <p class="text-muted">No productivity scores recorded in the past week.
-                        <a href="{% url 'tracker:productivity_score' %}">Add your first score</a>
-                    </p>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
 
-<div class="row mt-4">
     <!-- Recent Learning -->
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Recent Learning</h5>
-                <a href="{% url 'tracker:learning_journal' %}" class="btn btn-sm btn-primary">
-                    <i class="fas fa-book"></i> Learning Journal
-                </a>
-            </div>
-            <div class="card-body">
-                {% if recent_learning %}
-                    <div class="row">
-                        {% for entry in recent_learning %}
-                            <div class="col-md-4 mb-3">
-                                <div class="card h-100">
-                                    <div class="card-header">
-                                        <h6 class="mb-0">{{ entry.date }}</h6>
-                                    </div>
-                                    <div class="card-body">
-                                        <p>{{ entry.content|truncatewords:30 }}</p>
-                                        {% if entry.tags %}
-                                            <div class="mt-2">
-                                                {% for tag in entry.tags.split %}
-                                                    <span class="badge bg-info me-1">{{ tag }}</span>
-                                                {% endfor %}
-                                            </div>
-                                        {% endif %}
-                                    </div>
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="mb-0"><i class="fas fa-book me-2"></i>Recent Learning</h3>
+            <a href="{% url 'tracker:learning_journal' %}" class="btn btn-primary btn-sm">
+                <i class="fas fa-external-link-alt me-1"></i>View Journal
+            </a>
+        </div>
+        <div class="card-body">
+            {% if recent_learning %}
+                <div class="row">
+                    {% for entry in recent_learning %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-calendar-day me-2"></i>{{ entry.date|date:"M j, Y" }}
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="card-text">{{ entry.content|truncatewords:25 }}</p>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    {% if entry.tags %}
+                                        {% for tag in entry.tags.split %}
+                                            <span class="badge bg-secondary me-1">{{ tag }}</span>
+                                        {% endfor %}
+                                    {% endif %}
                                 </div>
                             </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <p class="text-muted">No learning entries recorded yet.
-                        <a href="{% url 'tracker:add_learning_entry' %}">Add your first entry</a>
-                    </p>
-                {% endif %}
-            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-book fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No learning entries recorded</p>
+                    <a href="{% url 'tracker:add_learning_entry' %}" class="btn btn-primary mt-2">
+                        <i class="fas fa-plus me-1"></i>Add Entry
+                    </a>
+                </div>
+            {% endif %}
         </div>
     </div>
 </div>
 {% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Task List Styling */
+    .list-group-item {
+        border-left: 4px solid var(--turquoise-blue);
+        margin-bottom: 8px;
+        transition: all 0.2s ease;
+    }
+    
+    .list-group-item:hover {
+        transform: translateX(3px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .completed-task {
+        opacity: 0.7;
+        border-left-color: #6c757d;
+    }
+    
+    /* Quadrant Badges */
+    .quadrant-badge {
+        font-weight: 500;
+        padding: 5px 10px;
+    }
+    
+    .quadrant-IU { background-color: var(--quadrant-iu); color: white; }
+    .quadrant-IN { background-color: var(--quadrant-in); color: #212529; }
+    .quadrant-NI { background-color: var(--quadrant-ni); color: white; }
+    .quadrant-NN { background-color: var(--quadrant-nn); color: white; }
+    
+    /* Quadrant Cards */
+    .quadrant-card {
+        height: 120px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+    
+    .quadrant-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .quadrant-iu {
+        background-color: rgba(220, 53, 69, 0.1);
+        border: 1px solid rgba(220, 53, 69, 0.3);
+    }
+    
+    .quadrant-in {
+        background-color: rgba(255, 193, 7, 0.1);
+        border: 1px solid rgba(255, 193, 7, 0.3);
+    }
+    
+    .quadrant-ni {
+        background-color: rgba(23, 162, 184, 0.1);
+        border: 1px solid rgba(23, 162, 184, 0.3);
+    }
+    
+    .quadrant-nn {
+        background-color: rgba(108, 117, 125, 0.1);
+        border: 1px solid rgba(108, 117, 125, 0.3);
+    }
+    
+    /* Activity Timeline */
+    .activity-timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+    
+    .activity-timeline::before {
+        content: '';
+        position: absolute;
+        left: 10px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background-color: var(--turquoise-blue);
+    }
+    
+    .activity-item {
+        position: relative;
+        margin-bottom: 15px;
+    }
+    
+    .activity-dot {
+        position: absolute;
+        left: -28px;
+        top: 5px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: var(--tropical-green);
+        border: 2px solid white;
+    }
+    
+    .activity-content {
+        background-color: white;
+        padding: 10px 15px;
+        border-radius: 6px;
+        border-left: 3px solid var(--turquoise-blue);
+    }
+    
+    .activity-time {
+        font-size: 0.8rem;
+        color: var(--dark-text-color);
+        opacity: 0.7;
+        margin-bottom: 3px;
+    }
+    
+    /* Chart Container */
+    #productivityChart {
+        width: 100% !important;
+        height: 200px !important;
+    }
+</style>
+{% endblock %}
+
 {% block extra_js %}
 <script>
+document.addEventListener('DOMContentLoaded', function() {
     {% if productivity_scores %}
     // Productivity Chart
-    document.addEventListener('DOMContentLoaded', function() {
-        const ctx = document.getElementById('productivityChart').getContext('2d');
-        const chart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: [
+    const ctx = document.getElementById('productivityChart').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [
+                {% for score in productivity_scores %}
+                    '{{ score.date|date:"M j" }}',
+                {% endfor %}
+            ],
+            datasets: [{
+                label: 'Productivity Score',
+                data: [
                     {% for score in productivity_scores %}
-                        '{{ score.date|date:"M d" }}',
+                        {{ score.score }},
                     {% endfor %}
                 ],
-                datasets: [{
-                    label: 'Productivity Score',
-                    data: [
-                        {% for score in productivity_scores %}
-                            {{ score.score }},
-                        {% endfor %}
-                    ],
-                    backgroundColor: 'rgba(13, 110, 253, 0.2)',
-                    borderColor: 'rgba(13, 110, 253, 1)',
-                    borderWidth: 1,
-                    tension: 0.3,
-                    fill: true
-                }]
-            },
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 100,
-                        title: {
-                            display: true,
-                            text: 'Score'
-                        }
-                    },
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Date'
-                        }
+                backgroundColor: 'rgba(77, 208, 225, 0.2)',
+                borderColor: 'var(--turquoise-blue)',
+                borderWidth: 2,
+                tension: 0.3,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    grid: {
+                        color: 'rgba(0,0,0,0.05)'
                     }
                 },
-                plugins: {
-                    legend: {
+                x: {
+                    grid: {
                         display: false
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return `Score: ${context.raw}%`;
-                            }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `Score: ${context.raw}/100`;
                         }
                     }
-                },
-                responsive: true,
-                maintainAspectRatio: false
+                }
             }
-        });
+        }
     });
     {% endif %}
+    
+    // Add root CSS variables for quadrant colors
+    document.documentElement.style.setProperty('--quadrant-iu', '#dc3545');
+    document.documentElement.style.setProperty('--quadrant-in', '#ffc107');
+    document.documentElement.style.setProperty('--quadrant-ni', '#17a2b8');
+    document.documentElement.style.setProperty('--quadrant-nn', '#6c757d');
+});
 </script>
 {% endblock %}
