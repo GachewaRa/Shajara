@@ -1,57 +1,86 @@
-<!-- tracker/templates/tracker/register.html -->
 {% extends 'tracker/base.html' %}
-{% block title %}Register | Productivity Tracker{% endblock %}
+{% load static %}
+
+{% block title %}Register | Shajara{% endblock %}
+
 {% block auth_content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card">
+<div class="row justify-content-center mt-5 align-items-stretch">
+    <div class="col-md-5 d-flex">
+        <div class="auth-image-container w-100">
+            <img src="{% static '/images/logo.png' %}" alt="Shajara Logo" class="img-fluid">
+        </div>
+    </div>
+    <div class="col-md-5">
+        <div class="card auth-card">
             <div class="card-header">
-                <h4 class="text-center">Create an Account</h4>
+                <h4 class="text-center mb-0">Create an Account</h4>
             </div>
             <div class="card-body">
                 <form method="POST">
                     {% csrf_token %}
-                    <div class="mb-3">
+                    <div class="mb-4">
                         <label for="id_username" class="form-label">Username</label>
-                        {{ form.username }}
+                        <div class="input-group">
+                            <span class="input-group-text bg-transparent border-end-0">
+                                <i class="fas fa-user text-muted"></i>
+                            </span>
+                            {{ form.username }}
+                        </div>
                         {% if form.username.errors %}
-                            <div class="text-danger small">
-                                {{ form.username.errors }}
-                            </div>
+                        <div class="text-danger small mt-1">
+                            {{ form.username.errors }}
+                        </div>
                         {% endif %}
                     </div>
-                    <div class="mb-3">
+                    <div class="mb-4">
                         <label for="id_email" class="form-label">Email</label>
-                        {{ form.email }}
+                        <div class="input-group">
+                            <span class="input-group-text bg-transparent border-end-0">
+                                <i class="fas fa-envelope text-muted"></i>
+                            </span>
+                            {{ form.email }}
+                        </div>
                         {% if form.email.errors %}
-                            <div class="text-danger small">
-                                {{ form.email.errors }}
-                            </div>
+                        <div class="text-danger small mt-1">
+                            {{ form.email.errors }}
+                        </div>
                         {% endif %}
                     </div>
-                    <div class="mb-3">
+                    <div class="mb-4">
                         <label for="id_password1" class="form-label">Password</label>
-                        {{ form.password1 }}
+                        <div class="input-group">
+                            <span class="input-group-text bg-transparent border-end-0">
+                                <i class="fas fa-lock text-muted"></i>
+                            </span>
+                            {{ form.password1 }}
+                        </div>
                         {% if form.password1.errors %}
-                            <div class="text-danger small">
-                                {{ form.password1.errors }}
-                            </div>
+                        <div class="text-danger small mt-1">
+                            {{ form.password1.errors }}
+                        </div>
                         {% endif %}
-                        <div class="form-text">
+                        <div class="form-text small mt-2">
                             {{ form.password1.help_text }}
                         </div>
                     </div>
-                    <div class="mb-3">
+                    <div class="mb-4">
                         <label for="id_password2" class="form-label">Confirm Password</label>
-                        {{ form.password2 }}
+                        <div class="input-group">
+                            <span class="input-group-text bg-transparent border-end-0">
+                                <i class="fas fa-lock text-muted"></i>
+                            </span>
+                            {{ form.password2 }}
+                        </div>
                         {% if form.password2.errors %}
-                            <div class="text-danger small">
-                                {{ form.password2.errors }}
-                            </div>
+                        <div class="text-danger small mt-1">
+                            {{ form.password2.errors }}
+                        </div>
                         {% endif %}
                     </div>
                     <div class="d-grid">
-                        <button type="submit" class="btn btn-primary">Register</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-user-plus me-2"></i>Register
+                        </button>
                     </div>
                 </form>
             </div>

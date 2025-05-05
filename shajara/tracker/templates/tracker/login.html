@@ -1,26 +1,45 @@
-<!-- tracker/templates/tracker/login.html -->
 {% extends 'tracker/base.html' %}
-{% block title %}Login | Productivity Tracker{% endblock %}
+{% load static %}
+
+{% block title %}Login | Shajara{% endblock %}
+
 {% block auth_content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card">
+<div class="row justify-content-center mt-5 align-items-stretch">
+    <div class="col-md-5 d-flex">
+        <div class="auth-image-container w-100">
+            <img src="{% static '/images/logo.png' %}" alt="Shajara Logo" class="img-fluid">
+        </div>
+    </div>
+    <div class="col-md-5">
+        <div class="card auth-card">
             <div class="card-header">
-                <h4 class="text-center">Login</h4>
+                <h4 class="text-center mb-0">Login to Shajara</h4>
             </div>
             <div class="card-body">
                 <form method="POST">
                     {% csrf_token %}
-                    <div class="mb-3">
+                    <div class="mb-4">
                         <label for="id_username" class="form-label">Username</label>
-                        <input type="text" name="username" id="id_username" class="form-control" required>
+                        <div class="input-group">
+                            <span class="input-group-text bg-transparent border-end-0">
+                                <i class="fas fa-user text-muted"></i>
+                            </span>
+                            <input type="text" name="username" id="id_username" class="form-control border-start-0" placeholder="Enter your username">
+                        </div>
                     </div>
-                    <div class="mb-3">
+                    <div class="mb-4">
                         <label for="id_password" class="form-label">Password</label>
-                        <input type="password" name="password" id="id_password" class="form-control" required>
+                        <div class="input-group">
+                            <span class="input-group-text bg-transparent border-end-0">
+                                <i class="fas fa-lock text-muted"></i>
+                            </span>
+                            <input type="password" name="password" id="id_password" class="form-control border-start-0" placeholder="Enter your password">
+                        </div>
                     </div>
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary">Login</button>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt me-2"></i>Login
+                        </button>
                     </div>
                 </form>
             </div>
