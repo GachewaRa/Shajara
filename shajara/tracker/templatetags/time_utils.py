@@ -5,6 +5,17 @@ from datetime import timedelta
 register = template.Library()
 
 @register.filter
+def format_duration(minutes):
+    if minutes is None:
+        return "Not set"
+    hours = minutes // 60
+    remaining_minutes = minutes % 60
+    if hours > 0:
+        return f"{hours} hr {remaining_minutes} min"
+    else:
+        return f"{remaining_minutes} min"
+
+@register.filter
 def time_until_deadline(deadline):
     now = timezone.now()
     diff = deadline - now
