@@ -1,4 +1,5 @@
 {% extends 'tracker/base.html' %}
+{% load time_utils %}
 {% block title %}Dashboard | Shajara{% endblock %}
 
 {% block content %}
@@ -23,7 +24,7 @@
                     {% if today_tasks %}
                         <div class="list-group">
                             {% for task in today_tasks|dictsort:"deadline" %}
-                                <div class="list-group-item {% if task.status == 'C' %}completed-task{% endif %}">
+                                <div class="list-group-item {% if task.status == 'C' %}completed-task{% endif %} {% if task.deadline and task.deadline < timezone.now and task.status != 'C' %}overdue-task{% endif %}">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div>
                                             {% if task.status == 'C' %}
@@ -31,12 +32,15 @@
                                                 <span class="text-decoration-line-through">{{ task.title }}</span>
                                             {% else %}
                                                 <i class="far fa-circle me-2"></i>
-                                                <span>{{ task.title }}</span>
+                                                <span class="turquoise-text">{{ task.title }}</span> 
+                                            </br>
                                             {% endif %}
                                             {% if task.deadline %}
-                                                <small class="text-muted ms-2">
-                                                    <i class="fas fa-clock me-1"></i>{{ task.deadline|time:"H:i" }}
-                                                </small>
+                                                {% load time_utils %}
+                                                <div class="deadline-container {% if task.deadline < timezone.now and task.status != 'C' %}text-danger bg-dark{% else %}bg-dark{% endif %} mt-1 rounded-sm p-1 small">
+                                                    <i class="fas fa-clock me-1"></i>
+                                                    {{ task.deadline|time_until_deadline }}
+                                                </div>
                                             {% endif %}
                                         </div>
                                         <div>
@@ -136,15 +140,15 @@
                                                 {{ activity.duration_minutes }}m
                                             </span>
                                         </div>
-                                        <small class="text-muted">{{ activity.get_category_display }}</small>
+                                        <small>{{ activity.get_category_display }}</small>
                                     </div>
                                 </div>
                             {% endfor %}
                         </div>
                     {% else %}
                         <div class="text-center py-4">
-                            <i class="fas fa-clock fa-3x text-muted mb-3"></i>
-                            <p class="text-muted">No activities tracked today</p>
+                            <i class="fas fa-clock fa-3x mb-3"></i>
+                            <p>No activities tracked today</p>
                             <a href="{% url 'tracker:add_activity' %}" class="btn btn-primary mt-2">
                                 <i class="fas fa-plus me-1"></i>Log Activity
                             </a>
@@ -167,14 +171,14 @@
                     {% if productivity_scores %}
                         <canvas id="productivityChart" height="200"></canvas>
                         <div class="text-center mt-3">
-                            <small class="text-muted">
+                            <small>
                                 Last 7 days average: {{ avg_productivity|floatformat:1 }}/100
                             </small>
                         </div>
                     {% else %}
                         <div class="text-center py-4">
-                            <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
-                            <p class="text-muted">No productivity scores recorded</p>
+                            <i class="fas fa-chart-line fa-3x mb-3"></i>
+                            <p>No productivity scores recorded</p>
                             <a href="{% url 'tracker:productivity_dashboard' %}" class="btn btn-primary mt-2">
                                 <i class="fas fa-plus me-1"></i>Add First Score
                             </a>
@@ -220,8 +224,8 @@
                 </div>
             {% else %}
                 <div class="text-center py-4">
-                    <i class="fas fa-book fa-3x text-muted mb-3"></i>
-                    <p class="text-muted">No learning entries recorded</p>
+                    <i class="fas fa-book fa-3x mb-3"></i>
+                    <p>No learning entries recorded</p>
                     <a href="{% url 'tracker:add_learning_entry' %}" class="btn btn-primary mt-2">
                         <i class="fas fa-plus me-1"></i>Add Entry
                     </a>
@@ -295,6 +299,10 @@
         background-color: rgba(108, 117, 125, 0.1);
         border: 1px solid rgba(108, 117, 125, 0.3);
     }
+
+    .turquoise-text {
+        color: #4dd0e1; /* Your turquoise blue color */
+    }
     
     /* Activity Timeline */
     .activity-timeline {
@@ -315,6 +323,7 @@
     .activity-item {
         position: relative;
         margin-bottom: 15px;
+        
     }
     
     .activity-dot {
@@ -325,11 +334,11 @@
         height: 12px;
         border-radius: 50%;
         background-color: var(--tropical-green);
-        border: 2px solid white;
+        border: 2px solid rgb(159, 248, 57);
     }
     
     .activity-content {
-        background-color: white;
+        background-color: rgb(24, 23, 23);
         padding: 10px 15px;
         border-radius: 6px;
         border-left: 3px solid var(--turquoise-blue);
@@ -346,6 +355,32 @@
     #productivityChart {
         width: 100% !important;
         height: 200px !important;
+    }
+
+    /* Add to your extra_css block */
+    .overdue-task {
+        border-left-color: #dc3545 !important;
+        background-color: rgba(220, 53, 69, 0.05);
+    }
+
+    .overdue-task .far.fa-circle {
+        color: #dc3545;
+    }
+
+    .text-danger {
+        color: #dc3545 !important;
+        font-weight: 500;
+    }
+
+    .deadline-container {
+        display: inline-block; /* To contain the background nicely */
+        color: rgb(252, 252, 252); /* Set text color for better contrast on dark background */
+    }
+    .rounded-sm {
+        border-radius: 0.5rem; /* Slightly rounded corners */
+    }
+    .p-1 {
+        padding: 0.25rem; /* Small padding */
     }
 </style>
 {% endblock %}
