@@ -24,6 +24,20 @@ class TaskForm(forms.ModelForm):
         self.fields['status'].widget.attrs.update({'class': 'form-select'})
 
 
+class CustomModelChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        if obj.deadline:
+            # Format with date and time in 24hr format if deadline has time component
+            if obj.deadline.hour != 0 or obj.deadline.minute != 0:
+                deadline_str = obj.deadline.strftime('%Y-%m-%d %H:%M')
+            else:
+                # Just show date if time is midnight (likely just a date was set)
+                deadline_str = obj.deadline.strftime('%Y-%m-%d')
+        else:
+            deadline_str = 'No deadline'
+            
+        return f"{obj.title} ({obj.get_quadrant_display()}) - Due: {deadline_str}"
+
 class ActivityForm(forms.ModelForm):
     class Meta:
         model = Activity
@@ -38,17 +52,32 @@ class ActivityForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        
+        # Update widget attributes
         self.fields['name'].widget.attrs.update({'class': 'form-control'})
         self.fields['description'].widget.attrs.update({'class': 'form-control'})
         self.fields['category'].widget.attrs.update({'class': 'form-select'})
         self.fields['date'].widget.attrs.update({'class': 'form-control'})
         self.fields['start_time'].widget.attrs.update({'class': 'form-control'})
         self.fields['end_time'].widget.attrs.update({'class': 'form-control'})
-        self.fields['task'].widget.attrs.update({'class': 'form-select'})
         
-        # Filter tasks by user if provided
+        # Replace the task field with a CustomModelChoiceField
+        task_queryset = self.fields['task'].queryset
+        self.fields['task'] = CustomModelChoiceField(
+            queryset=task_queryset,
+            widget=forms.Select(attrs={'class': 'form-select'}),
+            required=False  # Set to True if task is required
+        )
+        
+        # Filter tasks by user AND non-completed status
         if user:
-            self.fields['task'].queryset = Task.objects.filter(user=user)
+            self.fields['task'].queryset = Task.objects.filter(
+                user=user
+            ).exclude(
+                status='C'  # Exclude completed tasks
+            ).exclude(
+                status='D'  # Optionally exclude deleted tasks if needed
+            ).order_by('deadline')
 
 
 class DailyPlanForm(forms.ModelForm):
